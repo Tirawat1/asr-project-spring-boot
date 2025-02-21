@@ -2,7 +2,6 @@ package cs.project.TextToSpeech.services;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.PostMapping;
 
 import cs.project.TextToSpeech.infra.repository.DiaryRepository;
 import cs.project.TextToSpeech.models.DiaryModel;
