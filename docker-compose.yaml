@@ -1,29 +1,32 @@
 version: "3.8"
 
 services:
-  mongodb:
-    image: mongo:latest
-    container_name: mongodb
-    restart: always
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=root
-      - MONGO_INITDB_ROOT_PASSWORD=root
-      - MONGO_INITDB_DATABASE=asr_thai_backend
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo-data:/data/db
-
-  springboot-app:
-    build: .
-    container_name: springboot-app
+  texttospeechbackend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: textToSpeechBackend
     restart: always
     depends_on:
       - mongodb
-    environment:
-      - SPRING_DATA_MONGODB_URI=mongodb://root:root@mongodb:27017/asr_thai_backend?authSource=admin
     ports:
       - "8080:8080"
+    networks:
+      - mongo-network
+
+  mongodb:
+    image: mongo:latest
+    container_name: "mongodb"
+    ports:
+      - 27070:27017
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - mongo-network
 
 volumes:
   mongo-data:
+
+networks:
+  mongo-network:
+    driver: bridge
