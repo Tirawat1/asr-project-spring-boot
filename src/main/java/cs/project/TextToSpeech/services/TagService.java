@@ -39,7 +39,16 @@ public class TagService {
 
     public TagModel updateEntry(@PathVariable String id, TagRequest request) {
         TagModel tag = tagRepository.findById(id).orElseThrow(NoSuchElementException::new);
-        tag.setName(request.getName());
+
+        // check name
+        if (!tag.getName().equals(request.getName())) {
+            Optional<TagModel> existingTag = tagRepository.findByName(request.getName());
+            if (existingTag.isPresent() && !existingTag.get().getId().equals(id)) {
+                throw new IllegalArgumentException("Tag with name " + request.getName() + " already exists");
+            }
+
+            tag.setName(request.getName());
+        }
 
         if (request.getColorCode() == null || request.getColorCode().isEmpty()) {
             tag.setColorCode("E4E0E1");
