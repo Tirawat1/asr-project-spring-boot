@@ -21,7 +21,8 @@ public class DiaryModel {
 
     private String title;
     private List<Map<String, Object>> content;
-
+    private String workspaceId;
+    
     @DBRef
     private List<TagModel> tags;  // Reference to tags
 

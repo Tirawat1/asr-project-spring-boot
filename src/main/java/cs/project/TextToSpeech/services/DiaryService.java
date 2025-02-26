@@ -10,8 +10,12 @@ import cs.project.TextToSpeech.models.DiaryModel;
 import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
+import org.springframework.web.client.RestTemplate;
+
 
 @Service
 public class DiaryService {
@@ -23,8 +27,13 @@ public class DiaryService {
     @Autowired
     private TagService tagService;
 
-    public DiaryService(DiaryRepository repository , TagRepository tagRepository) {
+    
+
+    private final RestTemplate restTemplate;
+
+    public DiaryService(DiaryRepository repository , TagRepository tagRepository , RestTemplate restTemplate) {
         this.repository = repository;
+        this.restTemplate = restTemplate;
         this.tagRepository = tagRepository;
     }
 
@@ -36,11 +45,40 @@ public class DiaryService {
         return repository.findById(id).orElse(null);
     }
 
+    private List<Map<String, Object>> processContent(List<Map<String, Object>> content) {
+        for (Map<String, Object> item : content) {
+            if (item.containsKey("insert") && item.get("insert") instanceof Map) {
+                Map<String, Object> insertMap = (Map<String, Object>) item.get("insert");
+                if (insertMap.containsKey("custom") && insertMap.get("custom") instanceof Map) {
+                    Map<String, Object> customMap = (Map<String, Object>) insertMap.get("custom");
+                    if (customMap.containsKey("audio")) {
+                        String audioUrl = customMap.get("audio").toString();
+                        String transcribedText = sendAudioToEnhanceService(audioUrl);
+                        item.put("transcription", transcribedText);
+                    }
+                }
+            }
+        }
+        return content;
+    }
+
+    private String sendAudioToEnhanceService(String audioUrl) {
+        Map<String, String> requestBody = new HashMap<>();
+        requestBody.put("audioUrl", audioUrl);
+        
+        try {
+            return restTemplate.postForObject("http://192.168.1.38:5114/enhance_audio", requestBody, String.class);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "Transcription failed";
+        }
+    }
+
 
     public DiaryModel createEntry(DiaryRequest request) {
         DiaryModel diary = new DiaryModel();
         diary.setTitle(request.getTitle());
-        diary.setContent(request.getContent());
+        diary.setContent(processContent(request.getContent()));
 
         if (request.getTagIds() == null) {
             diary.setTags(new ArrayList<>());
