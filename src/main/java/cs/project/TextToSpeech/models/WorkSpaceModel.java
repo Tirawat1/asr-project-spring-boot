@@ -1,6 +1,7 @@
 package cs.project.TextToSpeech.models;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -18,6 +19,7 @@ public class WorkSpaceModel {
     private String name;
     private String description;
     private String ownerId;
-    private List<String> members;
     private List<String> diaryList; 
+
+    private Map<String, String> members;
 }
