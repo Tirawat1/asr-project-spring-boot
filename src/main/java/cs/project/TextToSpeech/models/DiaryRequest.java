@@ -1,14 +1,21 @@
 package cs.project.TextToSpeech.models;
 
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
-import java.util.List;
 
-import org.springframework.data.mongodb.core.mapping.DBRef;
+import java.util.List;
+import java.util.Map;
 
 @Data
 public class DiaryRequest {
-    private DiaryModel diary;
+    @NotNull(message = "Name cannot be null")
+    @NotEmpty(message = "Name cannot be empty")
+    private String title;
 
-    @DBRef
-    private List<TagModel> tags;
+    @NotNull(message = "Name cannot be null")
+    @NotEmpty(message = "Name cannot be empty")
+    private List<Map<String, Object>> content;
+
+    private List<String> tagIds;
 }
