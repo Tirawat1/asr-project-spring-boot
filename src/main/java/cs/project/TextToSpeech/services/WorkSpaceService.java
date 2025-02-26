@@ -61,7 +61,7 @@ public class WorkSpaceService {
         workSpaceRepository.deleteById(id);
     }
 
-    // Update an existing workspace
+    // Update workspace
     public WorkSpaceModel updateWorkspace(String id, WorkSpaceRequest workspaceRequest) {
         WorkSpaceModel workspace = getWorkspaceById(id);
 
