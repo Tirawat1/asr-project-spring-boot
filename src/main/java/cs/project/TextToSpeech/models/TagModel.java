@@ -10,6 +10,5 @@ public class TagModel {
     @Id
     private String id;
     private String name;
-
     private String colorCode;
 }
