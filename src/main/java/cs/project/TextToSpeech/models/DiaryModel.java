@@ -1,7 +1,10 @@
 package cs.project.TextToSpeech.models;
 
 import lombok.Data;
+
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -16,7 +19,11 @@ public class DiaryModel {
     private String id;
     private String title;
     private List<Map<String, Object>> content;
+
+    @CreatedDate
     private Instant createdAt;
+
+    @LastModifiedBy
     private Instant updatedAt;
 
     @DBRef
