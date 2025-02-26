@@ -8,12 +8,10 @@ import cs.project.TextToSpeech.infra.repository.TagRepository;
 import cs.project.TextToSpeech.models.DiaryModel;
 import cs.project.TextToSpeech.models.TagModel;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
 @Service
-
 public class DiaryService {
     @Autowired
     private final DiaryRepository repository;
@@ -38,9 +36,6 @@ public class DiaryService {
                 tag = existingTagOpt.get();
             }
         }
-
-        diary.setCreatedAt(Instant.now());
-        diary.setUpdatedAt(Instant.now());
 
         diary.setTags(tags);
 
