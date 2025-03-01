@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   texttospeechbackend:
     build:
@@ -13,6 +11,11 @@ services:
       - "8080:8080"
     networks:
       - mongo-network
+      - minio
+    environment:
+      MINIO_URL: http://minio:9000
+      MINIO_ACCESS_KEY: admin
+      MINIO_SECRET_KEY: P@ssw0rd64
 
   mongodb:
     image: mongo:latest
@@ -24,9 +27,37 @@ services:
     networks:
       - mongo-network
 
+  minio:
+    image: quay.io/minio/minio
+    container_name: minio
+    restart: always
+    ports:
+      - "9000:9000"  # MinIO API
+      - "9001:9001"  # MinIO Console
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: P@ssw0rd64
+    volumes:
+      - minio-data:/data
+    command: server /data --console-address ":9001"
+
+  minio-client:
+    image: minio/mc
+    depends_on:
+      - minio
+    entrypoint: [ "/bin/sh", "-c", "
+      sleep 5;
+      mc alias set asr-thai-minio http://minio:9000 admin P@ssw0rd64;
+      mc mb asr-thai-minio/audio-bucket || true;
+      exit 0;
+    " ]
+
 volumes:
   mongo-data:
+  minio-data:
 
 networks:
   mongo-network:
+    driver: bridge
+  minio:
     driver: bridge

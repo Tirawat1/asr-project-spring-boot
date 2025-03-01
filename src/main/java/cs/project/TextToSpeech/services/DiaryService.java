@@ -31,7 +31,7 @@ public class DiaryService {
 
     private final RestTemplate restTemplate;
 
-    public DiaryService(DiaryRepository repository , TagRepository tagRepository , RestTemplate restTemplate) {
+    public DiaryService(DiaryRepository repository , TagRepository tagRepository, RestTemplate restTemplate) {
         this.repository = repository;
         this.restTemplate = restTemplate;
         this.tagRepository = tagRepository;
