@@ -1,4 +1,4 @@
-package cs.project.TextToSpeech.models;
+package cs.project.TextToSpeech.models.Request;
 
 import java.util.List;
 
