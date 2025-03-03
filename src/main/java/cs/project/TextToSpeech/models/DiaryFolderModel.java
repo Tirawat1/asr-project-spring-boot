@@ -15,17 +15,16 @@ import java.util.List;
 @Document(collection = "diary_folders")
 public class DiaryFolderModel {
     @Id
-    private String id;
+    private String diaryFolderId;
     private String folderName;
 
-    @DBRef
-    private DiaryFolderModel parentFolder;
+    // @DBRef
+    // private DiaryFolderModel parentFolder;
     
-    @DBRef
-    private List<DiaryModel> diary;
+    private List<String> diaryIds;
 
-    @DBRef
-    private List<DiaryFolderModel> subFolders;
+    // @DBRef
+    // private List<DiaryFolderModel> subFolders;
 
     @CreatedDate
     private Instant createdAt;

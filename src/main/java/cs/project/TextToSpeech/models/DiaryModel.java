@@ -17,14 +17,13 @@ import java.util.Map;
 public class DiaryModel {
     @Id
     @MongoId
-    private String id;
+    private String diaryId;
 
     private String title;
     private List<Map<String, Object>> content;
-    private String workspaceId;
     
-    @DBRef
-    private List<TagModel> tags;  // Reference to tags
+
+    private List<String> tagsIds;  // Reference to tags
 
     @CreatedDate
     private Instant createdAt;

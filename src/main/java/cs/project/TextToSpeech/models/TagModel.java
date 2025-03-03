@@ -10,8 +10,8 @@ import org.springframework.data.mongodb.core.mapping.MongoId;
 public class TagModel {
     @Id
     @MongoId
-    private String id;
+    private String tagsIds;
 
-    private String name;
+    private String tagName;
     private String colorCode;
 }

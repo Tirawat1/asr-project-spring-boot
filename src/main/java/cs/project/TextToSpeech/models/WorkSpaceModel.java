@@ -15,12 +15,12 @@ import lombok.Data;
 public class WorkSpaceModel {
     @Id
     @MongoId
-    private String id;
+    private String workspaceId;
 
-    private String name;
+    private String workspaceName;
     private String description;
     private String ownerId;
-    private List<String> diaryList; 
+    private List<String> folderDiaryIds; 
 
     private Map<String,PermissionUser> members; 
 }

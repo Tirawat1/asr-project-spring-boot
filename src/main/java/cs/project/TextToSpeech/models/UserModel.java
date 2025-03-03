@@ -16,12 +16,9 @@ public class UserModel {
     @MongoId
     private String id;
 
-    private String username;
-    private String password;
-
     private String name;
     private String email;
-    private String role;
-    
-    private List<String> workspaceIds;
+    private String password;
+
+    private List<String> diaryFolderIds;
 }
