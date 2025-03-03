@@ -1,7 +1,7 @@
 package cs.project.TextToSpeech.controller;
 
 import cs.project.TextToSpeech.models.DiaryModel;
-import cs.project.TextToSpeech.models.DiaryRequest;
+import cs.project.TextToSpeech.models.Request.DiaryRequest;
 import cs.project.TextToSpeech.services.DiaryService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;

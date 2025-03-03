@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import cs.project.TextToSpeech.models.UserModel;
-import cs.project.TextToSpeech.models.UserRequest;
+import cs.project.TextToSpeech.models.Request.UserRequest;
 import cs.project.TextToSpeech.services.UserService;
 
 

@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import cs.project.TextToSpeech.models.WorkSpaceModel;
-import cs.project.TextToSpeech.models.WorkSpaceRequest;
+import cs.project.TextToSpeech.models.Request.WorkSpaceRequest;
 import cs.project.TextToSpeech.services.WorkSpaceService;
 
 @RestController

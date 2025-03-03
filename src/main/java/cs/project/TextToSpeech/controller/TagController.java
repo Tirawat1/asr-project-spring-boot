@@ -1,7 +1,7 @@
 package cs.project.TextToSpeech.controller;
 
 import cs.project.TextToSpeech.models.TagModel;
-import cs.project.TextToSpeech.models.TagRequest;
+import cs.project.TextToSpeech.models.Request.TagRequest;
 import cs.project.TextToSpeech.services.TagService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -1,6 +1,7 @@
 package cs.project.TextToSpeech.controller;
 
 import cs.project.TextToSpeech.models.DiaryFolderModel;
+import cs.project.TextToSpeech.models.Request.FolderDiaryRequest;
 import cs.project.TextToSpeech.services.DiaryFolderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +20,7 @@ public class DiaryFolderController {
 
     // Create a new folder
     @PostMapping
-    public ResponseEntity<DiaryFolderModel> createFolder(@RequestBody DiaryFolderModel folder) {
+    public ResponseEntity<DiaryFolderModel> createFolder(@RequestBody FolderDiaryRequest folder) {
         DiaryFolderModel savedFolder = diaryFolderService.createFolder(folder);
         return ResponseEntity.ok(savedFolder);
     }
@@ -31,16 +32,16 @@ public class DiaryFolderController {
         return folder.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // Get subfolders of a folder
-    @GetMapping("/{id}/subfolders")
-    public ResponseEntity<List<DiaryFolderModel>> getSubfolders(@PathVariable String id) {
-        List<DiaryFolderModel> subFolders = diaryFolderService.getSubfolders(id);
-        return ResponseEntity.ok(subFolders);
-    }
+    // // Get subfolders of a folder
+    // @GetMapping("/{id}/subfolders")
+    // public ResponseEntity<List<DiaryFolderModel>> getSubfolders(@PathVariable String id) {
+    //     List<DiaryFolderModel> subFolders = diaryFolderService.getSubfolders(id);
+    //     return ResponseEntity.ok(subFolders);
+    // }
 
     // Update a folder
     @PatchMapping("/{id}")
-    public ResponseEntity<DiaryFolderModel> updateFolder(@PathVariable String id, @RequestBody DiaryFolderModel updatedData) {
+    public ResponseEntity<DiaryFolderModel> updateFolder(@PathVariable String id, @RequestBody FolderDiaryRequest updatedData) {
         Optional<DiaryFolderModel> updatedFolder = diaryFolderService.updateFolder(id, updatedData);
         return updatedFolder.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
