@@ -1,17 +1,14 @@
 package cs.project.TextToSpeech.services;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.NoSuchElementException;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
+import cs.project.TextToSpeech.infra.enums.PermissionUser;
 import cs.project.TextToSpeech.infra.repository.UserRepository;
 import cs.project.TextToSpeech.infra.repository.WorkSpaceRepository;
 import cs.project.TextToSpeech.models.WorkSpaceModel;
 import cs.project.TextToSpeech.models.WorkSpaceRequest;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.*;
 
 @Service
 public class WorkSpaceService {
@@ -41,8 +38,20 @@ public class WorkSpaceService {
         workspace.setName(workspaceRequest.getName());
         workspace.setDescription(workspaceRequest.getDescription());
         workspace.setOwnerId(workspaceRequest.getOwnerId());
-        workspace.setMembers(workspaceRequest.getMembers() != null ? workspaceRequest.getMembers() : new HashMap<>());
         workspace.setDiaryList(new ArrayList<>());
+
+        // Initialize members with roles
+        Map<String, PermissionUser> members = new HashMap<>();
+        members.put(workspaceRequest.getOwnerId(), PermissionUser.OWNER); // Set owner as OWNER
+        if (workspaceRequest.getMembers() != null) {
+            Map<String, PermissionUser> updatedMembers = new HashMap<>();
+            for (String memberId : workspaceRequest.getMembers().keySet()) {
+                updatedMembers.put(memberId, workspaceRequest.getMembers().getOrDefault(memberId, PermissionUser.VIEWER));
+            }
+            workspace.setMembers(updatedMembers);
+        }
+        workspace.setMembers(members);
+
         return workSpaceRepository.save(workspace);
     }
 
@@ -77,8 +86,21 @@ public class WorkSpaceService {
             workspace.setOwnerId(workspaceRequest.getOwnerId());
         }
 
+        if (workspaceRequest.getDiaryList() != null) {
+            workspace.setDiaryList(workspaceRequest.getDiaryList());
+        }
+
         if (workspaceRequest.getMembers() != null) {
-            workspace.setMembers(workspaceRequest.getMembers());
+            Map<String, PermissionUser> updatedMembers = new HashMap<>();
+            for (String memberId : workspaceRequest.getMembers().keySet()) {
+                if(memberId.equals(workspace.getOwnerId())) {
+                    updatedMembers.put(memberId, PermissionUser.OWNER);
+                } else
+                {
+                    updatedMembers.put(memberId, workspaceRequest.getMembers().getOrDefault(memberId, PermissionUser.VIEWER));
+                }
+            }
+            workspace.setMembers(updatedMembers);
         }
 
         return workSpaceRepository.save(workspace);

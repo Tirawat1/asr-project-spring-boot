@@ -3,6 +3,7 @@ package cs.project.TextToSpeech.models;
 import java.util.List;
 import java.util.Map;
 
+import cs.project.TextToSpeech.infra.enums.PermissionUser;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -18,6 +19,6 @@ public class WorkSpaceRequest {
     @NotEmpty(message = "ownerId cannot be empty")
     private String ownerId;
 
-    private Map<String , String> members; // key: userId, value: role
+    private Map<String , PermissionUser> members; // key: userId, value: role
     private List<String> diaryList;
 }
