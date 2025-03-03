@@ -25,19 +25,14 @@ public class DiaryService {
     @Autowired
     private final DiaryRepository repository;
 
-    @Autowired
-    private final TagRepository tagRepository;
-    @Autowired
-    private TagService tagService;
 
-    
+
 
     private final RestTemplate restTemplate;
 
-    public DiaryService(DiaryRepository repository , TagRepository tagRepository , RestTemplate restTemplate) {
+    public DiaryService(DiaryRepository repository, RestTemplate restTemplate) {
         this.repository = repository;
         this.restTemplate = restTemplate;
-        this.tagRepository = tagRepository;
     }
 
     public List<DiaryModel> getAllEntries() {

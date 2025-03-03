@@ -5,11 +5,9 @@ import org.springframework.stereotype.Service;
 import cs.project.TextToSpeech.infra.repository.DiaryFolderRepository;
 import cs.project.TextToSpeech.infra.repository.DiaryRepository;
 import cs.project.TextToSpeech.models.DiaryFolderModel;
-import cs.project.TextToSpeech.models.DiaryModel;
 import cs.project.TextToSpeech.models.Request.FolderDiaryRequest;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -17,9 +15,6 @@ public class DiaryFolderService {
 
     @Autowired
     private DiaryFolderRepository folderRepository;
-
-    @Autowired
-    private DiaryRepository diaryRepository;
 
     // Create a new folder (Fixed to match Controller)
     public DiaryFolderModel createFolder(FolderDiaryRequest folder) {

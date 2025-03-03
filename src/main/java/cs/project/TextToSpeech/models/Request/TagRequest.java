@@ -6,9 +6,9 @@ import lombok.Data;
 
 @Data
 public class TagRequest {
-    @NotNull(message = "Name cannot be null")
-    @NotEmpty(message = "Name cannot be empty")
-    private String name;
+    @NotNull(message = "tagName cannot be null")
+    @NotEmpty(message = "tagName cannot be empty")
+    private String tagName;
 
     private String colorCode;
 }

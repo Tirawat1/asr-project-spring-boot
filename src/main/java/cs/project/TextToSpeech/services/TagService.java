@@ -23,18 +23,18 @@ public class TagService {
     public TagModel createEntry(TagRequest request) {
 
         try{
-            if(request.getName() == null || request.getName().trim().isEmpty()){
+            if(request.getTagName() == null || request.getTagName().trim().isEmpty()){
                 throw new IllegalArgumentException("Tag name cannot be empty");
             }
 
-            Optional<TagModel> existingTag = tagRepository.findByName(request.getName());
+            Optional<TagModel> existingTag = tagRepository.findBytagName(request.getTagName());
 
             if (existingTag.isPresent()) {
-                throw new IllegalArgumentException("Tag with name " + request.getName() + " already exists");
+                throw new IllegalArgumentException("Tag with name " + request.getTagName() + " already exists");
             }
 
             TagModel tag = new TagModel();
-            tag.setTagName(request.getName());
+            tag.setTagName(request.getTagName());
 
             if (request.getColorCode() == null || request.getColorCode().isEmpty()) {
                 tag.setColorCode("E4E0E1");
@@ -58,13 +58,13 @@ public class TagService {
              TagModel tag = tagRepository.findById(id).orElseThrow(NoSuchElementException::new);
 
         // check name
-        if (!tag.getTagName().equals(request.getName())) {
-            Optional<TagModel> existingTag = tagRepository.findByName(request.getName());
+        if (!tag.getTagName().equals(request.getTagName())) {
+            Optional<TagModel> existingTag = tagRepository.findBytagName(request.getTagName());
             if (existingTag.isPresent() && !existingTag.get().getTagsIds().equals(id)) {
-                throw new IllegalArgumentException("Tag with name " + request.getName() + " already exists");
+                throw new IllegalArgumentException("Tag with name " + request.getTagName() + " already exists");
             }
 
-            tag.setTagName(request.getName());
+            tag.setTagName(request.getTagName());
         }
 
         if (request.getColorCode() == null || request.getColorCode().isEmpty()) {

@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -53,19 +52,19 @@ public class DiaryFolderController {
         return deleted ? ResponseEntity.ok("Folder deleted successfully.") : ResponseEntity.notFound().build();
     }
 
-    // Add a subfolder
-    @PostMapping("/{parentFolderId}/subfolder/{subFolderId}")
-    public ResponseEntity<DiaryFolderModel> addSubFolder(@PathVariable String parentFolderId, @PathVariable String subFolderId) {
-        DiaryFolderModel subFolder = diaryFolderService.addSubFolder(parentFolderId, subFolderId);
-        return ResponseEntity.ok(subFolder);
-    }
+    // // Add a subfolder
+    // @PostMapping("/{parentFolderId}/subfolder/{subFolderId}")
+    // public ResponseEntity<DiaryFolderModel> addSubFolder(@PathVariable String parentFolderId, @PathVariable String subFolderId) {
+    //     DiaryFolderModel subFolder = diaryFolderService.addSubFolder(parentFolderId, subFolderId);
+    //     return ResponseEntity.ok(subFolder);
+    // }
 
-    // Find parent folder by ID
-    @GetMapping("/{id}/parent")
-    public ResponseEntity<DiaryFolderModel> findParentFolderById(@PathVariable String id) {
-        Optional<DiaryFolderModel> parentFolder = diaryFolderService.findParentFolderById(id);
-        return parentFolder.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
-    }
+    // // Find parent folder by ID
+    // @GetMapping("/{id}/parent")
+    // public ResponseEntity<DiaryFolderModel> findParentFolderById(@PathVariable String id) {
+    //     Optional<DiaryFolderModel> parentFolder = diaryFolderService.findParentFolderById(id);
+    //     return parentFolder.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    // }
 
     // Add a Diary to a Folder
     @PostMapping("/{folderId}/diary/{diaryId}")
