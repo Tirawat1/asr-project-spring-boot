@@ -2,7 +2,8 @@ package cs.project.TextToSpeech.services;
 
 import cs.project.TextToSpeech.infra.repository.TagRepository;
 import cs.project.TextToSpeech.models.TagModel;
-import cs.project.TextToSpeech.models.TagRequest;
+import cs.project.TextToSpeech.models.Request.TagRequest;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,34 +21,50 @@ public class TagService {
 
     // Create a new tag
     public TagModel createEntry(TagRequest request) {
-        Optional<TagModel> existingTag = tagRepository.findByName(request.getName());
-        if (existingTag.isPresent()) {
-            throw new IllegalArgumentException("Tag with name " + request.getName() + " already exists");
-        }
 
-        TagModel tag = new TagModel();
-        tag.setName(request.getName());
+        try{
+            if(request.getName() == null || request.getName().trim().isEmpty()){
+                throw new IllegalArgumentException("Tag name cannot be empty");
+            }
 
-        if (request.getColorCode() == null || request.getColorCode().isEmpty()) {
-            tag.setColorCode("E4E0E1");
-        } else {
-            tag.setColorCode(request.getColorCode());
-        }
-
-        return tagRepository.save(tag);
-    }
-
-    public TagModel updateEntry(@PathVariable String id, TagRequest request) {
-        TagModel tag = tagRepository.findById(id).orElseThrow(NoSuchElementException::new);
-
-        // check name
-        if (!tag.getName().equals(request.getName())) {
             Optional<TagModel> existingTag = tagRepository.findByName(request.getName());
-            if (existingTag.isPresent() && !existingTag.get().getId().equals(id)) {
+
+            if (existingTag.isPresent()) {
                 throw new IllegalArgumentException("Tag with name " + request.getName() + " already exists");
             }
 
-            tag.setName(request.getName());
+            TagModel tag = new TagModel();
+            tag.setTagName(request.getName());
+
+            if (request.getColorCode() == null || request.getColorCode().isEmpty()) {
+                tag.setColorCode("E4E0E1");
+            } else {
+                tag.setColorCode(request.getColorCode());
+            }
+
+            return tagRepository.save(tag);
+            }catch (IllegalArgumentException e){
+                throw new RuntimeException("Validation failed: " + e.getMessage());
+
+            }
+    }
+
+    public TagModel updateEntry(@PathVariable String id, TagRequest request) {
+
+        try{
+            if (id == null || id.trim().isEmpty()) {
+                throw new IllegalArgumentException("ID cannot be empty");
+            }
+             TagModel tag = tagRepository.findById(id).orElseThrow(NoSuchElementException::new);
+
+        // check name
+        if (!tag.getTagName().equals(request.getName())) {
+            Optional<TagModel> existingTag = tagRepository.findByName(request.getName());
+            if (existingTag.isPresent() && !existingTag.get().getTagsIds().equals(id)) {
+                throw new IllegalArgumentException("Tag with name " + request.getName() + " already exists");
+            }
+
+            tag.setTagName(request.getName());
         }
 
         if (request.getColorCode() == null || request.getColorCode().isEmpty()) {
@@ -57,6 +74,11 @@ public class TagService {
         }
 
         return tagRepository.save(tag);
+        }catch (IllegalArgumentException e){
+            throw new RuntimeException("Validation failed: " + e.getMessage());
+        }catch (Exception e){
+            throw new RuntimeException("Error updating tag: " + e.getMessage());
+        }
     }
 
     public void deleteEntry(@PathVariable String id) {

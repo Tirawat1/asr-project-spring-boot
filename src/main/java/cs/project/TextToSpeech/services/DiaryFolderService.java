@@ -6,6 +6,7 @@ import cs.project.TextToSpeech.infra.repository.DiaryFolderRepository;
 import cs.project.TextToSpeech.infra.repository.DiaryRepository;
 import cs.project.TextToSpeech.models.DiaryFolderModel;
 import cs.project.TextToSpeech.models.DiaryModel;
+import cs.project.TextToSpeech.models.Request.FolderDiaryRequest;
 
 import java.time.Instant;
 import java.util.List;
@@ -21,34 +22,81 @@ public class DiaryFolderService {
     private DiaryRepository diaryRepository;
 
     // Create a new folder (Fixed to match Controller)
-    public DiaryFolderModel createFolder(DiaryFolderModel folder) {
-        folder.setCreatedAt(Instant.now());
-        folder.setUpdatedAt(Instant.now());
-        return folderRepository.save(folder);
+    public DiaryFolderModel createFolder(FolderDiaryRequest folder) {
+        DiaryFolderModel folderModel = new DiaryFolderModel();
+        try{
+            if(folder.getFolderName() == null || folder.getFolderName().trim().isEmpty()){
+                throw new IllegalArgumentException("FolderName cannot be empty");
+            }
+            folderModel.setFolderName(folder.getFolderName());
+        }catch (IllegalArgumentException e){
+            throw new RuntimeException("Validation failed: " + e.getMessage());
+        }
+        catch (Exception e){
+            throw new RuntimeException("Error creating folder: " + e.getMessage());
+
+        }
+        folderModel.setCreatedAt(Instant.now());
+        folderModel.setFolderName(folder.getFolderName());
+        return folderRepository.save(folderModel);
     }
 
     // Get a folder by ID
     public Optional<DiaryFolderModel> getFolderById(String id) {
-        return folderRepository.findById(id);
+        try{
+            if (id == null || id.trim().isEmpty()) {
+                throw new IllegalArgumentException("ID cannot be empty");
+            }
+            return folderRepository.findById(id);
+        }catch (IllegalArgumentException e){
+            throw new RuntimeException("Validation failed: " + e.getMessage());
+
+        }catch (Exception e){
+            throw new RuntimeException("Error getting folder: " + e.getMessage());
+        }
     }
 
-    //  Get subfolders of a folder
-    public List<DiaryFolderModel> getSubfolders(String parentFolderId) {
-        return folderRepository.findByParentFolderId(parentFolderId);
-    }
+    // //  Get subfolders of a folder
+    // public List<DiaryFolderModel> getSubfolders(String parentFolderId) {
+    //     return folderRepository.findByParentFolderId(parentFolderId);
+    // }
 
     // Update a folder
-    public Optional<DiaryFolderModel> updateFolder(String id, DiaryFolderModel updatedData) {
-        Optional<DiaryFolderModel> folderOpt = folderRepository.findById(id);
-        if (folderOpt.isPresent()) {
-            DiaryFolderModel folder = folderOpt.get();
-            if (updatedData.getFolderName() != null) {
-                folder.setFolderName(updatedData.getFolderName());
+    public Optional<DiaryFolderModel> updateFolder(String id, FolderDiaryRequest updatedData) {
+        try{
+            if (id == null || id.trim().isEmpty()) {
+                throw new IllegalArgumentException("ID cannot be empty");
             }
-            folder.setUpdatedAt(Instant.now());
-            return Optional.of(folderRepository.save(folder));
+            if(updatedData.getFolderName() == null || updatedData.getFolderName().trim().isEmpty()){
+                throw new IllegalArgumentException("FolderName cannot be empty");
+            }
+            if(updatedData.getDiaryIds() == null || updatedData.getDiaryIds().isEmpty()){
+                throw new IllegalArgumentException("DiaryIds cannot be empty");
+            }
+            Optional<DiaryFolderModel> model = folderRepository.findById(id);
+            if(model.isPresent()){
+                DiaryFolderModel folder = model.get();
+                folder.setFolderName(updatedData.getFolderName());
+                folder.setUpdatedAt(Instant.now());
+                return Optional.of(folderRepository.save(folder));
+            }
+            return Optional.empty();
+        }catch (IllegalArgumentException e){
+            return Optional.empty();
         }
-        return Optional.empty();
+        catch (Exception e){
+            throw new RuntimeException("Error updating folder: " + e.getMessage());
+        }
+
+        // if (folderOpt.isPresent()) {
+        //     DiaryFolderModel folder = folderOpt.get();
+        //     if (updatedData.getFolderName() != null) {
+        //         folder.setFolderName(updatedData.getFolderName());
+        //     }
+        //     folder.setUpdatedAt(Instant.now());
+        //     return Optional.of(folderRepository.save(folder));
+        // }
+        // return Optional.empty();
     }
 
     // Delete a folder
@@ -68,8 +116,8 @@ public class DiaryFolderService {
         DiaryFolderModel subFolder = folderRepository.findById(subFolderId)
                 .orElseThrow(() -> new RuntimeException("Subfolder not found"));
 
-        subFolder.setParentFolder(parentFolder);
-        parentFolder.getSubFolders().add(subFolder);
+        // subFolder.setParentFolder(parentFolder);
+        // parentFolder.getSubFolders().add(subFolder);
 
         folderRepository.save(parentFolder);
         return folderRepository.save(subFolder);
@@ -85,10 +133,10 @@ public class DiaryFolderService {
         DiaryFolderModel folder = folderRepository.findById(folderId)
                 .orElseThrow(() -> new RuntimeException("Folder not found"));
 
-        DiaryModel diary = diaryRepository.findById(diaryId)
-                .orElseThrow(() -> new RuntimeException("Diary entry not found"));
+        // DiaryModel diary = diaryRepository.findById(diaryId)
+        //         .orElseThrow(() -> new RuntimeException("Diary entry not found"));
 
-        folder.getDiary().add(diary);
+        // folder.getDiary().add(diary);
         return folderRepository.save(folder);
     }
 }
