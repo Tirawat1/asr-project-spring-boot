@@ -7,7 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
-public class FolderDiaryRequest {
+public class DiaryFolderRequest {
     @NotNull(message = "FolderName cannot be null")
     @NotEmpty(message = "FolderName cannot be empty")
     private String folderName;
