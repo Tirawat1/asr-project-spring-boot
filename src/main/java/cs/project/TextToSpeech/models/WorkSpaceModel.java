@@ -5,7 +5,6 @@ import java.util.Map;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.MongoId;
 
 import cs.project.TextToSpeech.infra.enums.PermissionUser;
 import lombok.Data;
@@ -14,13 +13,11 @@ import lombok.Data;
 @Document(collection = "workspaces")
 public class WorkSpaceModel {
     @Id
-    @MongoId
     private String workspaceId;
 
     private String workspaceName;
     private String description;
     private String ownerId;
-    private List<String> folderDiaryIds; 
-
-    private Map<String,PermissionUser> members; 
+//    private List<String> folderDiaryIds;
+    private Map<String, PermissionUser> members;
 }
