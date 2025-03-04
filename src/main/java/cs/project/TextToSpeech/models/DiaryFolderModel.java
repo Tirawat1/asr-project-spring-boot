@@ -6,7 +6,6 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.DBRef;
 
 import java.time.Instant;
 import java.util.List;
@@ -17,11 +16,10 @@ public class DiaryFolderModel {
     @Id
     private String diaryFolderId;
     private String folderName;
+    private List<String> diaryIds;
 
     // @DBRef
     // private DiaryFolderModel parentFolder;
-    
-    private List<String> diaryIds;
 
     // @DBRef
     // private List<DiaryFolderModel> subFolders;
