@@ -1,21 +1,41 @@
 package cs.project.TextToSpeech.services;
 
-import java.util.List;
+import java.util.*;
 
+import cs.project.TextToSpeech.infra.repository.DiaryFolderRepository;
+import cs.project.TextToSpeech.infra.repository.DiaryRepository;
+import cs.project.TextToSpeech.models.Request.DiaryFolderRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import cs.project.TextToSpeech.infra.repository.UserRepository;
 import cs.project.TextToSpeech.models.UserModel;
 import cs.project.TextToSpeech.models.Request.UserRequest;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class UserService {
+    @Autowired
     private final UserRepository userRepository;
 
     @Autowired
-    public UserService(UserRepository userRepository) {
+    private final DiaryFolderRepository diaryFolderRepository;
+
+    @Autowired
+    private final DiaryRepository diaryRepository;
+
+    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    @Autowired
+    private DiaryFolderService diaryFolderService;
+
+    @Autowired
+    public UserService(UserRepository userRepository, DiaryFolderRepository diaryFolderRepository, DiaryRepository diaryRepository) {
         this.userRepository = userRepository;
+        this.diaryFolderRepository = diaryFolderRepository;
+        this.diaryRepository = diaryRepository;
     }
 
     // Get all users
@@ -33,45 +53,88 @@ public class UserService {
             if (id == null || id.trim().isEmpty()) {
                 throw new IllegalArgumentException("ID cannot be empty");
             }
-            return userRepository.findById(id).orElse(null);
+            return userRepository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User with ID: " + id));
         }catch (IllegalArgumentException e){
             throw new RuntimeException("Validation failed: " + e.getMessage());
         }
     }
 
+//    public UserWithFoldersAndDiaries getUserWithFoldersAndDiaries(String userId) {
+//        UserModel user = userRepository.findById(userId)
+//                .orElseThrow(() -> new RuntimeException("User not found"));
+//
+////        List<DiaryFolderModel> folders = diaryFolderRepository.findAllById(user.getDiaryFolderIds());
+//
+//        Map<String, List<DiaryModel>> diariesMap = new HashMap<>();
+//        for (DiaryFolderModel folder : folders) {
+//            List<DiaryModel> diaries = diaryRepository.findAllById(folder.getDiaryIds());
+//            diariesMap.put(folder.getDiaryFolderId(), diaries);
+//        }
+//
+//        return new UserWithFoldersAndDiaries(user, folders, diariesMap);
+//    }
+
     public UserModel createUser(UserRequest userRequest) {
-    try {
-        // Validate request
-        if (userRequest.getName() == null || userRequest.getName().trim().isEmpty()) {
-            throw new IllegalArgumentException("Name cannot be empty");
-        }
-        if (userRequest.getEmail() == null || !userRequest.getEmail().matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")) {
-            throw new IllegalArgumentException("Invalid email format");
-        }
-        if (userRequest.getPassword() == null || userRequest.getPassword().length() < 6) {
-            throw new IllegalArgumentException("Password must be at least 6 characters long");
-        }
-        // check exist 
-        if(userRepository.findByEmail(userRequest.getEmail()).isPresent()){
-            throw new IllegalArgumentException("Email already exists");
-        }
-        if(userRepository.findByName(userRequest.getName()).isPresent()){
-            throw new IllegalArgumentException("Name already exists");
-        }
-        // Create user
-        UserModel user = new UserModel();
-        user.setName(userRequest.getName());
-        user.setEmail(userRequest.getEmail());
-        user.setPassword(userRequest.getPassword());
+        try {
+            // check exist
+            if (userRepository.findByEmail(userRequest.getEmail()).isPresent()) {
+                throw new IllegalArgumentException("Email already exists");
+            }
 
-        return userRepository.save(user);
-    } catch (IllegalArgumentException e) {
-        throw new RuntimeException("Validation failed: " + e.getMessage());
-    } catch (Exception e) {
-        throw new RuntimeException("Error creating user: " + e.getMessage());
+            if (userRepository.findByName(userRequest.getName()).isPresent()) {
+                throw new IllegalArgumentException("Name already exists");
+            }
+
+            // Create user
+            UserModel user = new UserModel();
+            user.setName(userRequest.getName());
+            user.setEmail(userRequest.getEmail());
+
+            String hashedPassword = passwordEncoder.encode(userRequest.getPassword());
+            user.setPassword(hashedPassword);
+
+            DiaryFolderRequest diaryFolderRequest = new DiaryFolderRequest();
+            diaryFolderRequest.setFolderName("Default");
+            diaryFolderRequest.setDiaryIds(new ArrayList<>());
+            user = userRepository.save(user);
+
+            diaryFolderService.createPersonalDiaryFolder(user.getId(), diaryFolderRequest);
+
+            return user;
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Validation failed: " + e.getMessage());
+        } catch (Exception e) {
+            throw new RuntimeException("Error creating user: " + e.getMessage());
+        }
     }
-}
 
+    public UserModel updateUser(String id, UserRequest userRequest) {
+        try {
+            // Validate ID
+            if (id == null || id.trim().isEmpty()) {
+                throw new IllegalArgumentException("User ID cannot be empty");
+            }
+
+            // Find user
+            UserModel user = userRepository.findById(id).orElse(null);
+            if (user == null) {
+                throw new IllegalArgumentException("User not found with ID: " + id);
+            }
+
+            // Update user
+            user.setName(userRequest.getName());
+            user.setEmail(userRequest.getEmail());
+
+            String hashedPassword = passwordEncoder.encode(userRequest.getPassword());
+            user.setPassword(hashedPassword);
+
+            return userRepository.save(user);
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Validation failed: " + e.getMessage());
+        } catch (Exception e) {
+            throw new RuntimeException("Error updating user: " + e.getMessage());
+        }
+    }
 
     // Delete a user by ID
     public void deleteUser(String id) {
@@ -79,48 +142,61 @@ public class UserService {
             if (id == null || id.trim().isEmpty()) {
                 throw new IllegalArgumentException("ID cannot be empty");
             }
+
+            UserModel user = userRepository.findById(id).orElse(null);
+            if (user == null) {
+                throw new IllegalArgumentException("User not found with ID: " + id);
+            }
+
+//            for (String diaryFolderId : user.getDiaryFolderIds()) {
+//                diaryFolderRepository.deleteById(diaryFolderId);
+//            }
+
             userRepository.deleteById(id);
+
         }catch (IllegalArgumentException e){
             throw new RuntimeException("Validation failed: " + e.getMessage());
         }
-        
     }
 
-    public UserModel updateUser(String id, UserRequest userRequest) {
-    try {
-        // Validate ID
-        if (id == null || id.trim().isEmpty()) {
-            throw new IllegalArgumentException("User ID cannot be empty");
-        }
-
-        // Find user
-        UserModel user = userRepository.findById(id).orElse(null);
-        if (user == null) {
-            throw new IllegalArgumentException("User not found with ID: " + id);
-        }
-
-        // Validate request fields
-        if (userRequest.getName() == null || userRequest.getName().trim().isEmpty()) {
-            throw new IllegalArgumentException("Name cannot be empty");
-        }
-        if (userRequest.getEmail() == null || !userRequest.getEmail().matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")) {
-            throw new IllegalArgumentException("Invalid email format");
-        }
-        if (userRequest.getPassword() == null || userRequest.getPassword().length() < 6) {
-            throw new IllegalArgumentException("Password must be at least 6 characters long");
-        }
-
-        // Update user
-        user.setName(userRequest.getName());
-        user.setEmail(userRequest.getEmail());
-        user.setPassword(userRequest.getPassword());
-
-        return userRepository.save(user);
-    } catch (IllegalArgumentException e) {
-        throw new RuntimeException("Validation failed: " + e.getMessage());
-    } catch (Exception e) {
-        throw new RuntimeException("Error updating user: " + e.getMessage());
-    }
-}
-
+//    public DiaryFolderModel addUserDiaryFolder(String userId, DiaryFolderRequest diaryFolderRequest) {
+//        if (userId == null || userId.trim().isEmpty()) {
+//            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User ID cannot be empty");
+//        }
+//
+//        UserModel user = userRepository.findById(userId)
+//                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found with ID: " + userId));
+//
+//        DiaryFolderModel diaryFolderModel = diaryFolderService.createFolder(diaryFolderRequest);
+//
+//        user.getDiaryFolderIds().add(diaryFolderModel.getDiaryFolderId());
+//        userRepository.save(user);
+//
+//        return diaryFolderModel;
+//    }
+//
+//    public boolean removeUserDiaryFolder(String userId, String diaryFolderId) {
+//        Objects.requireNonNull(userId, "User ID cannot be null");
+//        Objects.requireNonNull(diaryFolderId, "Diary folder ID cannot be null");
+//
+//        UserModel user = userRepository.findById(userId)
+//                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "User not found with ID: " + userId));
+//
+//        boolean removed = user.getDiaryFolderIds().removeIf(folderId -> folderId.equals(diaryFolderId));
+//        userRepository.save(user);
+//
+//        if (!removed) {
+//            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Diary folder not found or does not belong to user: " + diaryFolderId);
+//        }
+//
+//        if (!diaryFolderRepository.existsById(diaryFolderId)) {
+//            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Diary folder does not exist with ID: " + diaryFolderId);
+//        }
+//
+//        try {
+//            return diaryFolderService.deleteFolder(diaryFolderId);
+//        } catch (EmptyResultDataAccessException e) {
+//            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to delete diary folder: " + diaryFolderId);
+//        }
+//    }
 }

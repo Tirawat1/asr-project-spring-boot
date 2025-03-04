@@ -1,87 +1,99 @@
 package cs.project.TextToSpeech.services;
 
 import cs.project.TextToSpeech.infra.repository.TagRepository;
+import cs.project.TextToSpeech.infra.repository.UserRepository;
 import cs.project.TextToSpeech.models.TagModel;
 import cs.project.TextToSpeech.models.Request.TagRequest;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.server.ResponseStatusException;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class TagService {
 
     @Autowired
     private TagRepository tagRepository;
+    @Autowired
+    private UserRepository userRepository;
 
     // Create a new tag
     public TagModel createEntry(TagRequest request) {
+        try {
+            List<TagModel> tagModels = getAllEntriesByOwnerId(request.getOwnerId());
 
-        try{
-            if(request.getTagName() == null || request.getTagName().trim().isEmpty()){
-                throw new IllegalArgumentException("Tag name cannot be empty");
-            }
+            boolean isDuplicate = tagModels.stream()
+                    .anyMatch(tag -> tag.getTagName().equalsIgnoreCase(request.getTagName()));
 
-            Optional<TagModel> existingTag = tagRepository.findBytagName(request.getTagName());
-
-            if (existingTag.isPresent()) {
-                throw new IllegalArgumentException("Tag with name " + request.getTagName() + " already exists");
+            if (isDuplicate) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST ,"Tag with name " + request.getTagName() + " already exists");
             }
 
             TagModel tag = new TagModel();
+            tag.setOwnerId(request.getOwnerId());
             tag.setTagName(request.getTagName());
-
-            if (request.getColorCode() == null || request.getColorCode().isEmpty()) {
-                tag.setColorCode("E4E0E1");
-            } else {
-                tag.setColorCode(request.getColorCode());
-            }
+            tag.setColorCode(
+                    (request.getColorCode() == null || request.getColorCode().isEmpty()) ? "E4E0E1" : request.getColorCode());
 
             return tagRepository.save(tag);
-            }catch (IllegalArgumentException e){
-                throw new RuntimeException("Validation failed: " + e.getMessage());
-
-            }
+        } catch (Exception e) {
+            throw new RuntimeException("Error creating tag: " + e.getMessage());
+        }
     }
 
-    public TagModel updateEntry(@PathVariable String id, TagRequest request) {
 
-        try{
-            if (id == null || id.trim().isEmpty()) {
-                throw new IllegalArgumentException("ID cannot be empty");
-            }
-             TagModel tag = tagRepository.findById(id).orElseThrow(NoSuchElementException::new);
+    public List<TagModel> getAllEntriesByOwnerId(String ownerId) {
+        try {
+            Objects.requireNonNull(ownerId, "OwnerId cannot be null");
 
-        // check name
-        if (!tag.getTagName().equals(request.getTagName())) {
-            Optional<TagModel> existingTag = tagRepository.findBytagName(request.getTagName());
-            if (existingTag.isPresent() && !existingTag.get().getTagsIds().equals(id)) {
-                throw new IllegalArgumentException("Tag with name " + request.getTagName() + " already exists");
+            if (!userRepository.existsById(ownerId)) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "OwnerId not found");
             }
 
-            tag.setTagName(request.getTagName());
+            return tagRepository.getAllEntriesByOwnerId(ownerId);
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
+    }
 
-        if (request.getColorCode() == null || request.getColorCode().isEmpty()) {
-            tag.setColorCode("E4E0E1");
-        } else {
-            tag.setColorCode(request.getColorCode());
-        }
+    public TagModel updateEntry(String id, TagRequest request) {
+        try {
+            Objects.requireNonNull(id, "ID cannot be null");
 
-        return tagRepository.save(tag);
-        }catch (IllegalArgumentException e){
-            throw new RuntimeException("Validation failed: " + e.getMessage());
-        }catch (Exception e){
+            if (!userRepository.existsById(request.getOwnerId())) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "OwnerId not found");
+            }
+
+            TagModel tagModel = tagRepository.findById(id)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tag with ID " + id + " not found"));
+
+            List<TagModel> tagModels = getAllEntriesByOwnerId(request.getOwnerId());
+
+            Optional<TagModel> existingTag = tagModels.stream()
+                    .filter(tag -> tag.getTagName().equals(request.getTagName()) && !tag.getTagId().equals(id))
+                    .findFirst();
+
+            if (existingTag.isPresent()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tag with name " + request.getTagName() + " already exists");
+            }
+
+            tagModel.setTagName(request.getTagName());
+            tagModel.setOwnerId(request.getOwnerId());
+            tagModel.setColorCode((request.getColorCode() == null || request.getColorCode().isEmpty()) ? "E4E0E1" : request.getColorCode());
+
+            return tagRepository.save(tagModel);
+        } catch (ResponseStatusException e) {
+            throw e;
+        } catch (Exception e) {
             throw new RuntimeException("Error updating tag: " + e.getMessage());
         }
     }
 
-    public void deleteEntry(@PathVariable String id) {
+    // delete tag
+    public void deleteEntry(String id) {
         try {
             tagRepository.deleteById(id);
         } catch (NoSuchElementException e) {
@@ -94,18 +106,8 @@ public class TagService {
         return tagRepository.findById(id).orElse(null);  
     }
 
+    // get all tags
     public List<TagModel> getAllEntries() {
         return tagRepository.findAll();
-    }
-
-    public List<TagModel> getTagsByIds(List<String> tagIds) {
-        List<TagModel> tags = new ArrayList<>();
-        for (String tagId : tagIds) {
-            TagModel tag = tagRepository.findById(tagId)
-                    .orElseThrow(() -> new NoSuchElementException("Tag with id " + tagId + " not found"));
-
-            tags.add(tag);
-        }
-        return tags;
     }
 }

@@ -25,9 +25,6 @@ public class DiaryService {
     @Autowired
     private final DiaryRepository repository;
 
-
-
-
     private final RestTemplate restTemplate;
 
     public DiaryService(DiaryRepository repository, RestTemplate restTemplate) {
@@ -125,9 +122,9 @@ public class DiaryService {
         diary.setContent(processContent(request.getContent()));
 
         if (request.getTagIds() == null) {
-            diary.setTagsIds(new ArrayList<>());
+            diary.setTagIds(new ArrayList<>());
         } else {
-            diary.setTagsIds(request.getTagIds());
+            diary.setTagIds(request.getTagIds());
         }
 
         return repository.save(diary);
@@ -158,9 +155,9 @@ public class DiaryService {
             diary.setContent(request.getContent());
 
             if (request.getTagIds() == null) {
-                diary.setTagsIds(new ArrayList<>());
+                diary.setTagIds(new ArrayList<>());
             } else {
-                diary.setTagsIds(request.getTagIds());
+                diary.setTagIds(request.getTagIds());
             }
             return repository.save(diary);
         }

@@ -3,6 +3,7 @@ package cs.project.TextToSpeech.services;
 import cs.project.TextToSpeech.infra.enums.PermissionUser;
 import cs.project.TextToSpeech.infra.repository.UserRepository;
 import cs.project.TextToSpeech.infra.repository.WorkSpaceRepository;
+import cs.project.TextToSpeech.models.UserModel;
 import cs.project.TextToSpeech.models.WorkSpaceModel;
 import cs.project.TextToSpeech.models.Request.WorkSpaceRequest;
 
@@ -10,6 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 public class WorkSpaceService {
@@ -24,12 +27,30 @@ public class WorkSpaceService {
 
     // Get all workspaces
     public List<WorkSpaceModel> getAllWorkspaces() {
-        try{
+        try {
             return workSpaceRepository.findAll();
-        }catch (Exception e){
+        } catch (Exception e) {
             throw new RuntimeException("Error getting all workspaces: " + e.getMessage());
         }
     }
+
+    public List<WorkSpaceModel> getWorkspacesByUserId(String userId) {
+        try {
+            Objects.requireNonNull(userId, "userId cannot be null");
+
+            return Stream.concat(
+                            Optional.ofNullable(workSpaceRepository.findAllByOwnerId(userId)).orElseGet(ArrayList::new).stream(),
+                            Optional.ofNullable(workSpaceRepository.findAllByMembersContaining(userId)).orElseGet(ArrayList::new).stream()
+                    )
+                    .distinct()
+                    .collect(Collectors.toList());
+
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error getting all workspaces", e);
+        }
+    }
+
 
     // Get a workspace by ID
     public WorkSpaceModel getWorkspaceById(String id) {
@@ -62,7 +83,7 @@ public class WorkSpaceService {
             workspace.setWorkspaceName(workspaceRequest.getName());
             workspace.setDescription(workspaceRequest.getDescription());
             workspace.setOwnerId(workspaceRequest.getOwnerId());
-            workspace.setFolderDiaryIds(new ArrayList<>());
+//            workspace.setFolderDiaryIds(new ArrayList<>());
             // Initialize members with roles
             Map<String, PermissionUser> members = new HashMap<>();
             members.put(workspaceRequest.getOwnerId(), PermissionUser.OWNER); // Set owner as OWNER
@@ -91,12 +112,12 @@ public class WorkSpaceService {
             }
              WorkSpaceModel workspace = getWorkspaceById(id);
             // Remove workspace from each user's list
-            for (String userId : workspace.getMembers().keySet()) {
-                userRepository.findById(userId).ifPresent(user -> {
-                    user.getDiaryFolderIds().remove(id);
-                    userRepository.save(user);
-                });
-            }
+//            for (String userId : workspace.getMembers().keySet()) {
+//                userRepository.findById(userId).ifPresent(user -> {
+//                    user.getDiaryFolderIds().remove(id);
+//                    userRepository.save(user);
+//                });
+//            }
 
             workSpaceRepository.deleteById(id);
         }catch (IllegalArgumentException e){
@@ -127,10 +148,6 @@ public class WorkSpaceService {
 
         if (workspaceRequest.getOwnerId() != null) {
             workspace.setOwnerId(workspaceRequest.getOwnerId());
-        }
-
-        if (workspaceRequest.getDiaryList() != null) {
-            workspace.setFolderDiaryIds(workspaceRequest.getDiaryList());
         }
 
         if (workspaceRequest.getMembers() != null) {
