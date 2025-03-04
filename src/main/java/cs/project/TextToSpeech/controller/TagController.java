@@ -32,6 +32,12 @@ public class TagController {
         }
     }
 
+    // Get tags by userId
+    @GetMapping("/owner/{ownerId}")
+    public ResponseEntity<List<TagModel>> getAllEntriesByOwnerId(@PathVariable String ownerId) {
+        return ResponseEntity.ok(tagService.getAllEntriesByOwnerId(ownerId));
+    }
+
     // Create a new tag
     @PostMapping
     public ResponseEntity<TagModel> createEntry(@Valid @RequestBody TagRequest request) {
