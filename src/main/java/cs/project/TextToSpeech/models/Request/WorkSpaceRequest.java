@@ -1,6 +1,5 @@
 package cs.project.TextToSpeech.models.Request;
 
-import java.util.List;
 import java.util.Map;
 
 import cs.project.TextToSpeech.infra.enums.PermissionUser;
@@ -14,11 +13,6 @@ public class WorkSpaceRequest {
     @NotEmpty(message = "Name cannot be empty")
     private String name;
     private String description;
-
-    @NotNull(message = "ownerId cannot be null")
-    @NotEmpty(message = "ownerId cannot be empty")
-    private String ownerId;
-
-    private Map<String , PermissionUser> members; // key: userId, value: role
-    private List<String> diaryList;
+    private Map<String , PermissionUser> members; // key: email, value: role
 }
+

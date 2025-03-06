@@ -7,8 +7,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import cs.project.TextToSpeech.models.WorkSpaceModel;
+import cs.project.TextToSpeech.models.DTO.GetWorkSpaceByUserIdDto;
 import cs.project.TextToSpeech.models.Request.WorkSpaceRequest;
 import cs.project.TextToSpeech.services.WorkSpaceService;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/workspace")
@@ -27,17 +29,22 @@ public class WorkSpaceController {
         return ResponseEntity.ok(workSpaceService.getWorkspaceById(id));
     }
 
-    @GetMapping("user/{userId}")
-    public ResponseEntity<List<WorkSpaceModel>> getWorkspacesByUserId(@PathVariable String userId) {
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<GetWorkSpaceByUserIdDto>> getWorkspacesByUserId(@PathVariable String userId) {
         return ResponseEntity.ok(workSpaceService.getWorkspacesByUserId(userId));
     }
 
-    @PostMapping
-    public ResponseEntity<WorkSpaceModel> createWorkspace(@RequestBody WorkSpaceRequest workspaceRequest) {
-        return ResponseEntity.ok(workSpaceService.createWorkspace(workspaceRequest));
+    @PostMapping("/user/{userId}")
+    public ResponseEntity<WorkSpaceModel> createWorkspace(@PathVariable String userId,@Valid @RequestBody WorkSpaceRequest workspaceRequest) {
+        return ResponseEntity.ok(workSpaceService.createWorkspace(userId,workspaceRequest));
     }
 
-     @PutMapping("/{id}")
+    @PutMapping("/user/{userId}")
+    public ResponseEntity<WorkSpaceModel> addMemberToWorkspace(@PathVariable String userId, @RequestBody WorkSpaceRequest workspaceRequest) {
+        return ResponseEntity.ok(workSpaceService.updateWorkspaceByUserId(userId, workspaceRequest));
+    }
+
+    @PutMapping("/{id}")
     public ResponseEntity<WorkSpaceModel> updateWorkspace(@PathVariable String id, @RequestBody WorkSpaceRequest workspaceRequest) {
         return ResponseEntity.ok(workSpaceService.updateWorkspace(id, workspaceRequest));
     }
