@@ -11,6 +11,5 @@ import java.util.List;
 @AllArgsConstructor
 public class GetWorkSpaceByUserIdDto {
     private WorkSpaceModel workspace;
-    private UserModel owner;
     private List<UserModel> members;
 }

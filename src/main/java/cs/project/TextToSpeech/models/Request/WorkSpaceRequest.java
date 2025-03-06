@@ -13,6 +13,6 @@ public class WorkSpaceRequest {
     @NotEmpty(message = "Name cannot be empty")
     private String name;
     private String description;
-    private Map<String , PermissionUser> members; // key: email, value: role
+    private Map<String, PermissionUser> members; // key: email, value: role
 }
 

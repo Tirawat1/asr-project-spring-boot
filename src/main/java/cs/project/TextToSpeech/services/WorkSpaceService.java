@@ -48,19 +48,17 @@ public class WorkSpaceService {
             // Get workspaces where the user is a member (owner , editor, viewer)
             List<WorkSpaceModel> workspaces = workSpaceRepository.findAll()
                     .stream()
-                    .filter(workspace -> workspace.getMembers() != null && workspace.getMembers().containsKey(userId))
+                    .filter(workspace -> workspace.getMembers() != null)
                     .toList();
 
             return workspaces.stream().map(workspace -> {
-
                 // Get all members' details (excluding owner)
                 List<UserModel> members = workspace.getMembers().keySet().stream() // <String, PermissinUser> (email, permission)
-                .filter(memberId -> !memberId.equals(userId)) // Exclude a user that request that workspace
-                .map(memberId -> userRepository.findById(memberId).orElse(null))
-                .filter(Objects::nonNull)
-                .toList();
+                    .map(memberId -> userRepository.findById(memberId).orElse(null))
+                    .filter(Objects::nonNull)
+                    .toList();
 
-                return new GetWorkSpaceByUserIdDto(workspace, user, members);
+                return new GetWorkSpaceByUserIdDto(workspace, members);
             }).toList();
 
         } catch (Exception e) {
