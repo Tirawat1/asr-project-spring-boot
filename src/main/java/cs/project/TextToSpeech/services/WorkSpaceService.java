@@ -93,18 +93,16 @@ public class WorkSpaceService {
             throw new IllegalArgumentException("Workspace name cannot be empty");
         }
 
-        // Find the user by ID
-        UserModel user = userRepository.findById(userId)
-                .orElseThrow(() -> new NoSuchElementException("User with id " + userId + " not found"));
-
         // Create the workspace
         WorkSpaceModel workspace = new WorkSpaceModel();
         workspace.setName(workspaceRequest.getName());
-        workspace.setDescription(workspaceRequest.getDescription());
+        if(workspaceRequest.getDescription() != null){
+            workspace.setDescription(workspaceRequest.getDescription());
+        }
 
         // Set the owner in the members map
         Map<String, PermissionUser> updatedMembers = new HashMap<>();
-        updatedMembers.put(user.getEmail(), PermissionUser.OWNER); // Set the user as the owner
+        updatedMembers.put(userId, PermissionUser.OWNER); // Set the user as the owner
 
         // Add additional members if any
         if (workspaceRequest.getMembers() != null) {
@@ -158,10 +156,7 @@ public void deleteWorkspace(String id) {
                 throw new IllegalArgumentException("Workspace name cannot be empty");
             }
 
-            // Find the user by ID
-            UserModel user = userRepository.findById(userId)
-                    .orElseThrow(() -> new NoSuchElementException("User with id " + userId + " not found"));
-
+         
             WorkSpaceModel workspace = workSpaceRepository.findAll()
                     .stream()
                     .filter(ws -> ws.getMembers() != null && ws.getMembers().containsKey(userId))
@@ -178,12 +173,12 @@ public void deleteWorkspace(String id) {
 
             // Update members
             Map<String, PermissionUser> updatedMembers = new HashMap<>();
-            updatedMembers.put(user.getEmail(), PermissionUser.OWNER); // Set the user as the owner
+            updatedMembers.put(userId, PermissionUser.OWNER); // Set the user as the owner
 
             // Add additional members if any
             if (workspaceRequest.getMembers() != null) {
-                for (String memberEmail : workspaceRequest.getMembers().keySet()) {
-                    updatedMembers.put(memberEmail, workspaceRequest.getMembers().getOrDefault(memberEmail, PermissionUser.VIEWER));
+                for (String MemberId : workspaceRequest.getMembers().keySet()) {
+                    updatedMembers.put(MemberId, workspaceRequest.getMembers().getOrDefault(MemberId, PermissionUser.VIEWER));
                 }
             }
 
