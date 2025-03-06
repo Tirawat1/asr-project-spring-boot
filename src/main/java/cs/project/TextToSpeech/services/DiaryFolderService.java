@@ -8,7 +8,6 @@ import cs.project.TextToSpeech.models.PersonalDiaryFolderModel;
 import cs.project.TextToSpeech.models.Request.DiaryRequest;
 import cs.project.TextToSpeech.models.WorkspaceDiaryFolderModel;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import cs.project.TextToSpeech.infra.repository.DiaryFolderRepository;
@@ -60,6 +59,7 @@ public class DiaryFolderService {
                 List<DiaryModel> diaries = diaryRepository.findAllById(folder.getDiaryIds());
 
                 return new PersonalFolderWithDiariesDTO(folder, diaries);
+                
             }).collect(Collectors.toList());
 
         } catch (Exception e) {
@@ -78,6 +78,7 @@ public class DiaryFolderService {
             workspaceDiaryFolderModel.setFolderName(diaryFolderRequest.getFolderName());
             workspaceDiaryFolderModel.setWorkspaceId(workspaceId);
             workspaceDiaryFolderModel.setDiaryIds(diaryIds);
+
             return folderRepository.save(workspaceDiaryFolderModel);
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
@@ -165,19 +166,19 @@ public class DiaryFolderService {
 
 
     // Add a subfolder to an existing folder
-    public DiaryFolderModel addSubFolder(String parentFolderId, String subFolderId) {
-        DiaryFolderModel parentFolder = folderRepository.findById(parentFolderId)
-                .orElseThrow(() -> new RuntimeException("Parent folder not found"));
+    // public DiaryFolderModel addSubFolder(String parentFolderId, String subFolderId) {
+    //     DiaryFolderModel parentFolder = folderRepository.findById(parentFolderId)
+    //             .orElseThrow(() -> new RuntimeException("Parent folder not found"));
 
-        DiaryFolderModel subFolder = folderRepository.findById(subFolderId)
-                .orElseThrow(() -> new RuntimeException("Subfolder not found"));
+    //     DiaryFolderModel subFolder = folderRepository.findById(subFolderId)
+    //             .orElseThrow(() -> new RuntimeException("Subfolder not found"));
 
-        // subFolder.setParentFolder(parentFolder);
-        // parentFolder.getSubFolders().add(subFolder);
+    //     // subFolder.setParentFolder(parentFolder);
+    //     // parentFolder.getSubFolders().add(subFolder);
 
-        folderRepository.save(parentFolder);
-        return folderRepository.save(subFolder);
-    }
+    //     folderRepository.save(parentFolder);
+    //     return folderRepository.save(subFolder);
+    // }
 
     // //  Get subfolders of a folder
     // public List<DiaryFolderModel> getSubfolders(String parentFolderId) {
@@ -185,9 +186,43 @@ public class DiaryFolderService {
     // }
 
     //Find parent folder by ID
-    public Optional<DiaryFolderModel> findParentFolderById(String id) {
-        return folderRepository.findById(id);
+    // public Optional<DiaryFolderModel> findParentFolderById(String id) {
+    //     return folderRepository.findById(id);
+    // }
+
+    // delete a personal folder and all diary by using userId
+    public void deletePersonalFolder(String userId) {
+        try {
+            Objects.requireNonNull(userId, "User ID cannot be null");
+
+            List<PersonalDiaryFolderModel> personalFolders = folderRepository.findPersonalFoldersByUserId(userId);
+
+            // delete all diaries of personal folders
+            for (PersonalDiaryFolderModel personalFolder : personalFolders) {
+                diaryRepository.deleteAllById(personalFolder.getDiaryIds());
+            }
+
+            folderRepository.deleteAll(personalFolders);
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to delete personal folders");
+        }
     }
 
-    //  Add a Diary  to a Folder
+    // delete a workspace folder by using workspaceId
+    public void deleteWorkspaceDiaryFolder(String workSpaceId){
+        try {
+            Objects.requireNonNull(workSpaceId, "Workspace ID cannot be null");
+
+            List<WorkspaceDiaryFolderModel> workspaceFolders = folderRepository.findWorkspaceFoldersByWorkspaceId(workSpaceId);
+
+            // delete all diaries of workspace folders
+            for (WorkspaceDiaryFolderModel workspaceFolder : workspaceFolders) {
+                diaryRepository.deleteAllById(workspaceFolder.getDiaryIds());
+            }
+
+            folderRepository.deleteAll(workspaceFolders);
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to delete workspace folders");
+        }
+    }
 }

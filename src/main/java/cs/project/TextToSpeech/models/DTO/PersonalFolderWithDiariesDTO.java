@@ -2,7 +2,6 @@ package cs.project.TextToSpeech.models.DTO;
 
 import cs.project.TextToSpeech.models.DiaryModel;
 import cs.project.TextToSpeech.models.PersonalDiaryFolderModel;
-import cs.project.TextToSpeech.models.WorkspaceDiaryFolderModel;
 import lombok.Data;
 
 import java.util.List;
