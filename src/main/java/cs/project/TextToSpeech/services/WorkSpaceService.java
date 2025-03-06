@@ -131,22 +131,24 @@ public class WorkSpaceService {
 
 
     // Delete a workspace by ID
-public void deleteWorkspace(String id) {
-    try {
-        if (id == null || id.trim().isEmpty()) {
-            throw new IllegalArgumentException("ID cannot be empty");
+    public void deleteWorkspace(String id) {
+        try {
+            if (id == null || id.trim().isEmpty()) {
+                throw new IllegalArgumentException("ID cannot be empty");
+            }
+
+            // Delete a workspace diary folder (not finish yet)
+            diaryFolderService.deleteWorkspaceDiaryFolder(id);
+
+            // Delete the workspace
+            workSpaceRepository.deleteById(id);
+            
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Validation failed: " + e.getMessage());
+        } catch (Exception e) {
+            throw new RuntimeException("Error deleting workspace: " + e.getMessage());
         }
-
-        // Delete a workspace diary folder (not finish yet)
-
-        // Delete the workspace
-        workSpaceRepository.deleteById(id);
-    } catch (IllegalArgumentException e) {
-        throw new RuntimeException("Validation failed: " + e.getMessage());
-    } catch (Exception e) {
-        throw new RuntimeException("Error deleting workspace: " + e.getMessage());
     }
-}
 
 
     // Update workspace by userId 
