@@ -1,6 +1,5 @@
 package cs.project.TextToSpeech.models;
 
-import java.util.List;
 import java.util.Map;
 
 import org.springframework.data.annotation.Id;
@@ -13,11 +12,10 @@ import lombok.Data;
 @Document(collection = "workspaces")
 public class WorkSpaceModel {
     @Id
-    private String workspaceId;
+    private String id;
 
-    private String workspaceName;
+    private String name;
     private String description;
-    private String ownerId;
-//    private List<String> folderDiaryIds;
-    private Map<String, PermissionUser> members;
+
+    private Map<String, PermissionUser> members; // email , permission (owner, editor, viewer)
 }

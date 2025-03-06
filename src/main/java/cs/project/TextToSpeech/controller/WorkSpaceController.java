@@ -14,7 +14,7 @@ import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/workspace")
-@CrossOrigin(origins = "*") 
+@CrossOrigin(origins = "*")
 public class WorkSpaceController {
     @Autowired
     private WorkSpaceService workSpaceService;

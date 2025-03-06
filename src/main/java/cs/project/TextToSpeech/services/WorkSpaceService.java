@@ -228,26 +228,4 @@ public void deleteWorkspace(String id) {
             throw new RuntimeException("Validation failed: " + e.getMessage());
         }
     }
-
-    public void deleteWorkspaceByUserId(String userId){
-        try{
-            if (userId == null || userId.trim().isEmpty()) {
-                throw new IllegalArgumentException("ID cannot be empty");
-            }
-            // find user email
-            UserModel user = userRepository.findById(userId)
-                    .orElseThrow(() -> new NoSuchElementException("User with id " + userId + " not found"));
-            // delete a workspace where the user is a member
-            List<WorkSpaceModel> workspacesToDelete = workSpaceRepository.findAll()
-                .stream()
-                .filter(ws -> ws.getMembers() != null && ws.getMembers().containsKey(user.getEmail()))
-                .collect(Collectors.toList());
-
-
-        }catch (IllegalArgumentException e){
-            throw new RuntimeException("Validation failed: " + e.getMessage());
-        }catch (Exception e){
-            throw new RuntimeException("Error deleting workspace: " + e.getMessage());
-        }
-    }
 }
