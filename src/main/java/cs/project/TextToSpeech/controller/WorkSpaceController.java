@@ -13,8 +13,7 @@ import cs.project.TextToSpeech.services.WorkSpaceService;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/workspace")
-@CrossOrigin(origins = "*")
+@RequestMapping("/workspaces")
 public class WorkSpaceController {
     @Autowired
     private WorkSpaceService workSpaceService;
