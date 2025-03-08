@@ -7,4 +7,6 @@ import cs.project.TextToSpeech.models.WorkSpaceModel;
 
 @Repository
 public interface WorkSpaceRepository extends MongoRepository<WorkSpaceModel, String> {
+    // List<WorkSpaceModel> findAllByOwnerId(String ownerId);
+    // List<WorkSpaceModel> findAllByMembersContaining(String userId);
 }

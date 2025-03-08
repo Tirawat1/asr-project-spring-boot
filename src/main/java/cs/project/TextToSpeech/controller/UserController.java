@@ -2,6 +2,7 @@ package cs.project.TextToSpeech.controller;
 
 import java.util.List;
 
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -14,7 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import cs.project.TextToSpeech.models.UserModel;
-import cs.project.TextToSpeech.models.UserRequest;
+import cs.project.TextToSpeech.models.Request.UserRequest;
 import cs.project.TextToSpeech.services.UserService;
 
 
@@ -36,7 +37,7 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<UserModel> createUser(@RequestBody UserRequest userRequest) {
+    public ResponseEntity<UserModel> createUser(@Valid @RequestBody UserRequest userRequest) {
         return ResponseEntity.ok(userService.createUser(userRequest));
     }
 
@@ -50,5 +51,4 @@ public class UserController {
     public ResponseEntity<UserModel> updateUser(@PathVariable String id, @RequestBody UserRequest userRequest) {
         return ResponseEntity.ok(userService.updateUser(id, userRequest));
     }
-    
 }

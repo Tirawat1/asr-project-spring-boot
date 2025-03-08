@@ -4,23 +4,16 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import cs.project.TextToSpeech.models.WorkSpaceModel;
-import cs.project.TextToSpeech.models.WorkSpaceRequest;
+import cs.project.TextToSpeech.models.DTO.WorkspaceWithUsersDTO;
+import cs.project.TextToSpeech.models.Request.WorkSpaceRequest;
 import cs.project.TextToSpeech.services.WorkSpaceService;
+import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/workspace")
-@CrossOrigin(origins = "*") 
+@RequestMapping("/workspaces")
 public class WorkSpaceController {
     @Autowired
     private WorkSpaceService workSpaceService;
@@ -35,13 +28,18 @@ public class WorkSpaceController {
         return ResponseEntity.ok(workSpaceService.getWorkspaceById(id));
     }
 
-    @PostMapping
-    public ResponseEntity<WorkSpaceModel> createWorkspace(@RequestBody WorkSpaceRequest workspaceRequest) {
-        return ResponseEntity.ok(workSpaceService.createWorkspace(workspaceRequest));
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<WorkspaceWithUsersDTO>> getWorkspacesByUserId(@PathVariable String userId) {
+        return ResponseEntity.ok(workSpaceService.getWorkspacesByUserId(userId));
     }
 
-     @PutMapping("/{id}")
-    public ResponseEntity<WorkSpaceModel> updateWorkspace(@PathVariable String id, @RequestBody WorkSpaceRequest workspaceRequest) {
+    @PostMapping("/user/{userId}")
+    public ResponseEntity<WorkspaceWithUsersDTO> createWorkspace(@PathVariable String userId, @Valid @RequestBody WorkSpaceRequest workspaceRequest) {
+        return ResponseEntity.ok(workSpaceService.createWorkspace(userId,workspaceRequest));
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<WorkspaceWithUsersDTO> updateWorkspace(@PathVariable String id, @RequestBody WorkSpaceRequest workspaceRequest) {
         return ResponseEntity.ok(workSpaceService.updateWorkspace(id, workspaceRequest));
     }
 

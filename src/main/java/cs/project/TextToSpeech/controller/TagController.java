@@ -1,7 +1,7 @@
 package cs.project.TextToSpeech.controller;
 
 import cs.project.TextToSpeech.models.TagModel;
-import cs.project.TextToSpeech.models.TagRequest;
+import cs.project.TextToSpeech.models.Request.TagRequest;
 import cs.project.TextToSpeech.services.TagService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +32,12 @@ public class TagController {
         }
     }
 
+    // Get tags by userId
+    @GetMapping("/owner/{ownerId}")
+    public ResponseEntity<List<TagModel>> getAllEntriesByOwnerId(@PathVariable String ownerId) {
+        return ResponseEntity.ok(tagService.getAllEntriesByOwnerId(ownerId));
+    }
+
     // Create a new tag
     @PostMapping
     public ResponseEntity<TagModel> createEntry(@Valid @RequestBody TagRequest request) {
@@ -40,7 +46,7 @@ public class TagController {
     }
 
     // update tag
-    @PatchMapping("/{id}")
+    @PutMapping("/{id}")
     public ResponseEntity<TagModel> updateEntry(@PathVariable String id, @Valid @RequestBody TagRequest request) {
         TagModel tag = tagService.updateEntry(id, request);
         return ResponseEntity.ok(tag);

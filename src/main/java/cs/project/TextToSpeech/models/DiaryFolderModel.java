@@ -6,7 +6,6 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.DBRef;
 
 import java.time.Instant;
 import java.util.List;
@@ -15,17 +14,15 @@ import java.util.List;
 @Document(collection = "diary_folders")
 public class DiaryFolderModel {
     @Id
-    private String id;
+    private String diaryFolderId;
     private String folderName;
+    private List<String> diaryIds;
 
-    @DBRef
-    private DiaryFolderModel parentFolder;
-    
-    @DBRef
-    private List<DiaryModel> diary;
+    // @DBRef
+    // private DiaryFolderModel parentFolder;
 
-    @DBRef
-    private List<DiaryFolderModel> subFolders;
+    // @DBRef
+    // private List<DiaryFolderModel> subFolders;
 
     @CreatedDate
     private Instant createdAt;
