@@ -46,7 +46,7 @@ public class TagController {
     }
 
     // update tag
-    @PatchMapping("/{id}")
+    @PutMapping("/{id}")
     public ResponseEntity<TagModel> updateEntry(@PathVariable String id, @Valid @RequestBody TagRequest request) {
         TagModel tag = tagService.updateEntry(id, request);
         return ResponseEntity.ok(tag);

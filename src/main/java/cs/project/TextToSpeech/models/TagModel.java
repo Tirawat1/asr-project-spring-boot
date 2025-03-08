@@ -11,5 +11,4 @@ public class TagModel {
     private String tagId;
     private String tagName;
     private String colorCode;
-    private String ownerId;
 }
