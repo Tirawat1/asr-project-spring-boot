@@ -11,4 +11,6 @@ public interface UserRepository extends MongoRepository<UserModel, String> {
     // List<UserModel> findByWorkspaceIdsContaining(String workspaceId); 
     Optional<UserModel> findByEmail(String email);
     Optional<UserModel> findByName(String name);
+
+    boolean existsByEmail(String email);
 }

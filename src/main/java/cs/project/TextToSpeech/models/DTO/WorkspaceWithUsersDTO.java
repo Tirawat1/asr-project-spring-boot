@@ -9,8 +9,7 @@ import java.util.List;
 
 @Data
 @AllArgsConstructor
-public class GetWorkSpaceByUserIdDto {
+public class WorkspaceWithUsersDTO {
     private WorkSpaceModel workspace;
-    private UserModel owner;
     private List<UserModel> members;
 }
