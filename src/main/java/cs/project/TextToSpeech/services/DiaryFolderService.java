@@ -1,8 +1,7 @@
 package cs.project.TextToSpeech.services;
 
 import cs.project.TextToSpeech.infra.repository.DiaryRepository;
-import cs.project.TextToSpeech.models.DTO.PersonalFolderWithDiariesDTO;
-import cs.project.TextToSpeech.models.DTO.WorkspaceFolderWithDiariesDTO;
+import cs.project.TextToSpeech.models.DTO.DiaryFolderWithDiariesDTO;
 import cs.project.TextToSpeech.models.DiaryModel;
 import cs.project.TextToSpeech.models.PersonalDiaryFolderModel;
 import cs.project.TextToSpeech.models.Request.DiaryRequest;
@@ -31,7 +30,7 @@ public class DiaryFolderService {
     private DiaryService diaryService;
 
     // Personal Folder
-    public DiaryFolderModel createPersonalDiaryFolder(String userId, DiaryFolderRequest diaryFolderRequest) {
+    public DiaryFolderWithDiariesDTO createPersonalDiaryFolder(String userId, DiaryFolderRequest diaryFolderRequest) {
         try {
             Objects.requireNonNull(userId, "User ID cannot be null");
 
@@ -41,24 +40,26 @@ public class DiaryFolderService {
             personalDiaryFolderModel.setFolderName(diaryFolderRequest.getFolderName());
             personalDiaryFolderModel.setDiaryIds(diaryIds);
             personalDiaryFolderModel.setUserId(userId);
-            return folderRepository.save(personalDiaryFolderModel);
+            personalDiaryFolderModel = folderRepository.save(personalDiaryFolderModel);
+
+            return new DiaryFolderWithDiariesDTO(personalDiaryFolderModel, new ArrayList<>());
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }
 
-    public List<PersonalFolderWithDiariesDTO> getAllPersonalDiaryFoldersWithDiaries(String userId) {
+    public List<DiaryFolderWithDiariesDTO> getAllPersonalDiaryFoldersWithDiaries(String userId) {
         try {
             Objects.requireNonNull(userId, "User ID cannot be null");
 
             // Find all workspace diary folders
-            List<PersonalDiaryFolderModel> personalFolders = folderRepository.findPersonalFoldersByUserId(userId);
+            List<DiaryFolderModel> personalFolders = folderRepository.findPersonalFoldersByUserId(userId);
 
             // Convert each folder to DTO
             return personalFolders.stream().map(folder -> {
                 List<DiaryModel> diaries = diaryRepository.findAllById(folder.getDiaryIds());
 
-                return new PersonalFolderWithDiariesDTO(folder, diaries);
+                return new DiaryFolderWithDiariesDTO(folder, diaries);
                 
             }).collect(Collectors.toList());
 
@@ -68,7 +69,7 @@ public class DiaryFolderService {
     }
 
     // Workspace Folder
-    public DiaryFolderModel createWorkspaceDiaryFolder(String workspaceId, DiaryFolderRequest diaryFolderRequest) {
+    public DiaryFolderWithDiariesDTO createWorkspaceDiaryFolder(String workspaceId, DiaryFolderRequest diaryFolderRequest) {
         try {
             Objects.requireNonNull(workspaceId, "Workspace ID cannot be null");
 
@@ -78,25 +79,26 @@ public class DiaryFolderService {
             workspaceDiaryFolderModel.setFolderName(diaryFolderRequest.getFolderName());
             workspaceDiaryFolderModel.setWorkspaceId(workspaceId);
             workspaceDiaryFolderModel.setDiaryIds(diaryIds);
+            workspaceDiaryFolderModel = folderRepository.save(workspaceDiaryFolderModel);
 
-            return folderRepository.save(workspaceDiaryFolderModel);
+            return new DiaryFolderWithDiariesDTO(workspaceDiaryFolderModel, new ArrayList<>());
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }
 
-    public List<WorkspaceFolderWithDiariesDTO> getAllWorkspaceDiaryFoldersWithDiaries(String workspaceId) {
+    public List<DiaryFolderWithDiariesDTO> getAllWorkspaceDiaryFoldersWithDiaries(String workspaceId) {
         try {
             Objects.requireNonNull(workspaceId, "Workspace ID cannot be null");
 
             // Find all workspace diary folders
-            List<WorkspaceDiaryFolderModel> workspaceFolders = folderRepository.findWorkspaceFoldersByWorkspaceId(workspaceId);
+            List<DiaryFolderModel> workspaceFolders = folderRepository.findWorkspaceFoldersByWorkspaceId(workspaceId);
 
             // Convert each folder to DTO
             return workspaceFolders.stream().map(folder -> {
                 List<DiaryModel> diaries = diaryRepository.findAllById(folder.getDiaryIds());
 
-                return new WorkspaceFolderWithDiariesDTO(folder, diaries);
+                return new DiaryFolderWithDiariesDTO(folder, diaries);
             }).collect(Collectors.toList());
 
         } catch (Exception e) {
@@ -115,17 +117,28 @@ public class DiaryFolderService {
     }
 
     // Update a folder
-    public DiaryFolderModel updateFolder(String id, DiaryFolderRequest diaryFolderRequest) {
+    public DiaryFolderWithDiariesDTO updateFolder(String id, DiaryFolderRequest diaryFolderRequest) {
         try {
             Objects.requireNonNull(id, "Diary folder ID cannot be null");
 
             DiaryFolderModel diaryFolderModel = diaryFolderRepository.findById(id).orElseThrow(
                     () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Folder not found"));
 
-            diaryFolderModel.setFolderName(diaryFolderRequest.getFolderName());
-            diaryFolderModel.setDiaryIds(diaryFolderRequest.getDiaryIds());
-            return folderRepository.save(diaryFolderModel);
+            if (diaryFolderRequest.getFolderName() != null &&
+                    !diaryFolderRequest.getFolderName().equals(diaryFolderModel.getFolderName()) &&
+                    !diaryFolderRequest.getFolderName().isEmpty()) {
+                diaryFolderModel.setFolderName(diaryFolderRequest.getFolderName());
+            }
 
+            if (diaryFolderRequest.getDiaryIds() != null) {
+                diaryFolderModel.setDiaryIds(diaryFolderRequest.getDiaryIds());
+            }
+
+            diaryFolderModel = folderRepository.save(diaryFolderModel);
+
+            List<DiaryModel> diaries = diaryRepository.findAllById(diaryFolderModel.getDiaryIds());
+
+            return new DiaryFolderWithDiariesDTO(diaryFolderModel, diaries);
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
@@ -140,7 +153,6 @@ public class DiaryFolderService {
                     () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Folder not found"));
 
             diaryRepository.deleteAllById(diaryFolderModel.getDiaryIds());
-
             diaryFolderRepository.deleteById(id);
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to delete diary folder: " + id);
@@ -195,10 +207,10 @@ public class DiaryFolderService {
         try {
             Objects.requireNonNull(userId, "User ID cannot be null");
 
-            List<PersonalDiaryFolderModel> personalFolders = folderRepository.findPersonalFoldersByUserId(userId);
+            List<DiaryFolderModel> personalFolders = folderRepository.findPersonalFoldersByUserId(userId);
 
             // delete all diaries of personal folders
-            for (PersonalDiaryFolderModel personalFolder : personalFolders) {
+            for (DiaryFolderModel personalFolder : personalFolders) {
                 diaryRepository.deleteAllById(personalFolder.getDiaryIds());
             }
 
@@ -213,10 +225,10 @@ public class DiaryFolderService {
         try {
             Objects.requireNonNull(workSpaceId, "Workspace ID cannot be null");
 
-            List<WorkspaceDiaryFolderModel> workspaceFolders = folderRepository.findWorkspaceFoldersByWorkspaceId(workSpaceId);
+            List<DiaryFolderModel> workspaceFolders = folderRepository.findWorkspaceFoldersByWorkspaceId(workSpaceId);
 
             // delete all diaries of workspace folders
-            for (WorkspaceDiaryFolderModel workspaceFolder : workspaceFolders) {
+            for (DiaryFolderModel workspaceFolder : workspaceFolders) {
                 diaryRepository.deleteAllById(workspaceFolder.getDiaryIds());
             }
 

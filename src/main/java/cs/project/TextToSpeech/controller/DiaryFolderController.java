@@ -1,7 +1,6 @@
 package cs.project.TextToSpeech.controller;
 
-import cs.project.TextToSpeech.models.DTO.PersonalFolderWithDiariesDTO;
-import cs.project.TextToSpeech.models.DTO.WorkspaceFolderWithDiariesDTO;
+import cs.project.TextToSpeech.models.DTO.DiaryFolderWithDiariesDTO;
 import cs.project.TextToSpeech.models.DiaryFolderModel;
 import cs.project.TextToSpeech.models.DiaryModel;
 import cs.project.TextToSpeech.models.Request.DiaryFolderRequest;
@@ -26,23 +25,23 @@ public class DiaryFolderController {
 
     // Personal Folder
     @PostMapping("/personal/{userId}")
-    public ResponseEntity<DiaryFolderModel> createPersonalDiaryFolder(@PathVariable String userId, @Valid @RequestBody DiaryFolderRequest diaryFolderRequest) {
+    public ResponseEntity<DiaryFolderWithDiariesDTO> createPersonalDiaryFolder(@PathVariable String userId, @Valid @RequestBody DiaryFolderRequest diaryFolderRequest) {
         return ResponseEntity.ok(diaryFolderService.createPersonalDiaryFolder(userId, diaryFolderRequest));
     }
 
     @GetMapping("/personal/{userId}")
-    public ResponseEntity<List<PersonalFolderWithDiariesDTO>> getAllPersonalDiaryFolders(@PathVariable String userId) {
+    public ResponseEntity<List<DiaryFolderWithDiariesDTO>> getAllPersonalDiaryFolders(@PathVariable String userId) {
         return ResponseEntity.ok(diaryFolderService.getAllPersonalDiaryFoldersWithDiaries(userId));
     }
 
     // Workspace Folder
     @PostMapping("/workspace/{workspaceId}")
-    public ResponseEntity<DiaryFolderModel> createWorkspaceDiaryFolder(@PathVariable String workspaceId, @Valid @RequestBody DiaryFolderRequest diaryFolderRequest) {
+    public ResponseEntity<DiaryFolderWithDiariesDTO> createWorkspaceDiaryFolder(@PathVariable String workspaceId, @Valid @RequestBody DiaryFolderRequest diaryFolderRequest) {
         return ResponseEntity.ok(diaryFolderService.createWorkspaceDiaryFolder(workspaceId, diaryFolderRequest));
     }
 
     @GetMapping("/workspace/{workspaceId}")
-    public ResponseEntity<List<WorkspaceFolderWithDiariesDTO>> getAllWorkspaceDiaryFolders(@PathVariable String workspaceId) {
+    public ResponseEntity<List<DiaryFolderWithDiariesDTO>> getAllWorkspaceDiaryFolders(@PathVariable String workspaceId) {
         return ResponseEntity.ok(diaryFolderService.getAllWorkspaceDiaryFoldersWithDiaries(workspaceId));
     }
 
@@ -55,7 +54,7 @@ public class DiaryFolderController {
 
     // Update a folder
     @PatchMapping("/{id}")
-    public ResponseEntity<DiaryFolderModel> updateFolder(@PathVariable String id, @Valid @RequestBody DiaryFolderRequest diaryFolderRequest) {
+    public ResponseEntity<DiaryFolderWithDiariesDTO> updateFolder(@PathVariable String id, @Valid @RequestBody DiaryFolderRequest diaryFolderRequest) {
         return ResponseEntity.ok(diaryFolderService.updateFolder(id, diaryFolderRequest));
     }
 
