@@ -31,6 +31,7 @@ public class UserService {
     @Autowired
     private DiaryFolderService diaryFolderService;
 
+
     @Autowired
     public UserService(UserRepository userRepository, DiaryFolderRepository diaryFolderRepository, DiaryRepository diaryRepository) {
         this.userRepository = userRepository;
@@ -99,7 +100,6 @@ public class UserService {
             user = userRepository.save(user);
 
             diaryFolderService.createPersonalDiaryFolder(user.getId(), diaryFolderRequest);
-
             return user;
         } catch (IllegalArgumentException e) {
             throw new RuntimeException("Validation failed: " + e.getMessage());
@@ -148,9 +148,9 @@ public class UserService {
                 throw new IllegalArgumentException("User not found with ID: " + id);
             }
 
-//            for (String diaryFolderId : user.getDiaryFolderIds()) {
-//                diaryFolderRepository.deleteById(diaryFolderId);
-//            }
+            // Delete all diary folders and diaries of user
+            diaryFolderService.deletePersonalFolder(id);
+            
 
             userRepository.deleteById(id);
 
