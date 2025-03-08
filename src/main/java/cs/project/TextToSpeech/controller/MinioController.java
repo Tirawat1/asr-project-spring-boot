@@ -5,6 +5,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequestMapping("/minio")
@@ -25,5 +27,10 @@ public class MinioController {
     public Map<String, String> getDownloadUrl(@PathVariable String filename) throws Exception {
         String url = minioService.getAudioPresignedUrl(filename);
         return Map.of("url", url);
+    }
+
+    @GetMapping("/test")
+    public String getMethodName(@RequestParam String param) {
+        return "hello world!";
     }
 }
