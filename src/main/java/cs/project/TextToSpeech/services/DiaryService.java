@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import cs.project.TextToSpeech.infra.repository.DiaryRepository;
-import cs.project.TextToSpeech.infra.repository.TagRepository;
 import cs.project.TextToSpeech.models.DiaryModel;
 import cs.project.TextToSpeech.models.Request.DiaryRequest;
 
@@ -176,4 +175,30 @@ public class DiaryService {
             throw new NoSuchElementException("Diary with id " + id + " not found");
         }
     }
+
+    public List<DiaryModel> getDiariesByTagId(String tagId) {
+        try {
+            if (tagId == null || tagId.trim().isEmpty()) {
+                throw new IllegalArgumentException("Tag ID cannot be empty");
+            }
+            return repository.findAllByTagIdsContains(tagId);
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Validation failed: " + e.getMessage());
+        } catch (Exception e) {
+            throw new RuntimeException("Error getting diaries by tag ID: " + e.getMessage());
+        }
+    }
+
+    // // delete all diaries of user
+    // public void deleteAllDiariesOfUser(String userId){
+    //     try{
+    //         if (userId == null || userId.trim().isEmpty()) {
+    //             throw new IllegalArgumentException("User ID cannot be empty");
+    //         }
+    //         repository.deleteAllByUserId(userId);
+    //     }catch(Exception e){
+    //         throw new RuntimeException("Error deleting all diaries of user: " + e.getMessage());
+    //     }
+    // }
+
 }
