@@ -13,9 +13,8 @@ import lombok.Data;
 public class WorkSpaceModel {
     @Id
     private String id;
-
     private String name;
     private String description;
-
+    private WorkspaceIcon icon;
     private Map<String, PermissionUser> members; // email , permission (owner, editor, viewer)
 }

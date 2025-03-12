@@ -2,6 +2,7 @@ package cs.project.TextToSpeech.controller;
 
 import java.util.List;
 
+import cs.project.TextToSpeech.models.Request.RemovedMemberRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -46,6 +47,12 @@ public class WorkSpaceController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteWorkspace(@PathVariable String id) {
         workSpaceService.deleteWorkspace(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{id}/members")
+    public ResponseEntity<Void> removeMember(@PathVariable String id, @RequestBody RemovedMemberRequest request) {
+        workSpaceService.removeMember(id, request);
         return ResponseEntity.noContent().build();
     }
 }
