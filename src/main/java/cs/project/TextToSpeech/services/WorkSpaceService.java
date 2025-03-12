@@ -4,6 +4,7 @@ import cs.project.TextToSpeech.infra.enums.PermissionUser;
 import cs.project.TextToSpeech.infra.repository.UserRepository;
 import cs.project.TextToSpeech.infra.repository.WorkSpaceRepository;
 import cs.project.TextToSpeech.models.Request.DiaryFolderRequest;
+import cs.project.TextToSpeech.models.Request.RemovedMemberRequest;
 import cs.project.TextToSpeech.models.UserModel;
 import cs.project.TextToSpeech.models.WorkSpaceModel;
 import cs.project.TextToSpeech.models.DTO.WorkspaceWithUsersDTO;
@@ -101,6 +102,10 @@ public class WorkSpaceService {
             workspace.setDescription(workspaceRequest.getDescription());
         }
 
+        if (workspaceRequest.getIcon() != null) {
+            workspace.setIcon(workspaceRequest.getIcon());
+        }
+
         // Set the owner in the members map
         Map<String, PermissionUser> updatedMembers = new HashMap<>();
         updatedMembers.put(userId, PermissionUser.OWNER); // Set the user as the owner
@@ -173,6 +178,10 @@ public class WorkSpaceService {
                 workspace.setDescription(workspaceRequest.getDescription());
             }
 
+            if (workspaceRequest.getIcon() != null) {
+                workspace.setIcon(workspaceRequest.getIcon());
+            }
+
             Map<String, PermissionUser> updatedMembers = workspace.getMembers();
             if (workspaceRequest.getMembers() != null && !workspaceRequest.getMembers().isEmpty()) {
                 for (String memberId : workspaceRequest.getMembers().keySet()) {
@@ -195,6 +204,21 @@ public class WorkSpaceService {
             return new WorkspaceWithUsersDTO(workspace, userRepository.findAllById(workspace.getMembers().keySet()));
 
 
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Validation failed: " + e.getMessage());
+        }
+    }
+
+    public void removeMember(String id, RemovedMemberRequest request) {
+        try {
+            Objects.requireNonNull(id, "ID cannot be empty");
+            Objects.requireNonNull(request.getRemovedUserId(), "UserId cannot be empty");
+
+            WorkSpaceModel workspace = getWorkspaceById(id);
+            if (workspace.getMembers().containsKey(request.getRemovedUserId())) {
+                workspace.getMembers().remove(request.getRemovedUserId());
+                workSpaceRepository.save(workspace);
+            }
         } catch (IllegalArgumentException e) {
             throw new RuntimeException("Validation failed: " + e.getMessage());
         }
