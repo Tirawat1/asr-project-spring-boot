@@ -15,6 +15,6 @@ public class WorkSpaceModel {
     private String id;
     private String name;
     private String description;
-    private WorkSpaceIcon icon;
+    private WorkspaceIcon icon;
     private Map<String, PermissionUser> members; // email , permission (owner, editor, viewer)
 }
