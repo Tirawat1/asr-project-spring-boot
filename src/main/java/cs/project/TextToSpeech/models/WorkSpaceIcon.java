@@ -1,6 +1,9 @@
 package cs.project.TextToSpeech.models;
 
-public class WorkSpaceIcon {
-    private String iconName;
+import lombok.Data;
+
+@Data
+public class WorkspaceIcon {
+    private String name;
     private String colorCode;
 }
