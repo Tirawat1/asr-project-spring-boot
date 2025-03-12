@@ -33,23 +33,33 @@ public class TagController {
     }
 
     // Get tags by userId
-    @GetMapping("/owner/{ownerId}")
-    public ResponseEntity<List<TagModel>> getAllEntriesByOwnerId(@PathVariable String ownerId) {
-        return ResponseEntity.ok(tagService.getAllEntriesByOwnerId(ownerId));
+    @GetMapping("/personal/{userId}")
+    public ResponseEntity<List<TagModel>> getAllPersonalTags(@PathVariable String userId) {
+        return ResponseEntity.ok(tagService.getAllPersonalTagByUserId(userId));
     }
 
-    // Create a new tag
-    @PostMapping
-    public ResponseEntity<TagModel> createEntry(@Valid @RequestBody TagRequest request) {
-        TagModel savedTag = tagService.createEntry(request);
-        return ResponseEntity.ok(savedTag);
+    // Get tags by workspaceId
+    @GetMapping("/workspace/{workspaceId}")
+    public ResponseEntity<List<TagModel>> getAllWorkspaceTags(@PathVariable String workspaceId) {
+        return ResponseEntity.ok(tagService.getAllWorkspaceTagsByWorkspaceId(workspaceId));
+    }
+
+    // create personal tag
+    @PostMapping("/personal/{userId}")
+    public ResponseEntity<TagModel> addPersonalTag(@PathVariable String userId, @RequestBody @Valid TagRequest tagRequest) {
+        return ResponseEntity.ok(tagService.createPersonalTag(userId, tagRequest));
+    }
+
+    // create workspace tag
+    @PostMapping("/workspace/{workspaceId}")
+    public ResponseEntity<TagModel> addWorkspaceTag(@PathVariable String workspaceId, @RequestBody @Valid TagRequest tagRequest) {
+        return ResponseEntity.ok(tagService.createWorkspaceTag(workspaceId, tagRequest));
     }
 
     // update tag
-    @PutMapping("/{id}")
+    @PatchMapping("/{id}")
     public ResponseEntity<TagModel> updateEntry(@PathVariable String id, @Valid @RequestBody TagRequest request) {
-        TagModel tag = tagService.updateEntry(id, request);
-        return ResponseEntity.ok(tag);
+        return ResponseEntity.ok(tagService.updateTag(id, request));
     }
 
     @DeleteMapping("/{id}")

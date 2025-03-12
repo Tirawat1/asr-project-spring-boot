@@ -1,7 +1,9 @@
 package cs.project.TextToSpeech.services;
 
+import cs.project.TextToSpeech.infra.repository.DiaryRepository;
 import cs.project.TextToSpeech.infra.repository.TagRepository;
 import cs.project.TextToSpeech.infra.repository.UserRepository;
+import cs.project.TextToSpeech.models.DiaryModel;
 import cs.project.TextToSpeech.models.PersonalTagModel;
 import cs.project.TextToSpeech.models.TagModel;
 import cs.project.TextToSpeech.models.WorkspaceTagModel;
@@ -23,19 +25,18 @@ public class TagService {
     private TagRepository tagRepository;
     @Autowired
     private UserRepository userRepository;
-
-    @Autowired 
-    private DiaryService diaryService;
+    @Autowired
+    private DiaryRepository diaryRepository;
 
 
     // personal Tags
     // get all list of a tags that belong to a user
-    public List<PersonalTagModel> getAllPersonalTags(String userId) {
+    public List<TagModel> getAllPersonalTagByUserId(String userId) {
         try {
             Objects.requireNonNull(userId, "OwnerId cannot be null");
 
             // Fetch personal tags belonging to the user
-            List<PersonalTagModel> personalTags = tagRepository.getAllPersonalTagsByUserId(userId);
+            List<TagModel> personalTags = tagRepository.getAllPersonalTagsByUserId(userId);
 
             return personalTags;
 
@@ -48,7 +49,7 @@ public class TagService {
         try {
             Objects.requireNonNull(userId, "User ID cannot be null");
 
-            List<TagModel> tagModels = getAllEntriesByOwnerId(userId);
+            List<TagModel> tagModels = getAllPersonalTags(userId);
 
             boolean isDuplicate = tagModels.stream()
                     .anyMatch(tag -> tag.getTagName().equalsIgnoreCase(request.getTagName()));
@@ -71,12 +72,12 @@ public class TagService {
 
     // Workspace Tags
     // get all list of a tags that belong to a workspace
-    public List<WorkspaceTagModel> getAllWorkspaceTags(String workspaceId) {
+    public List<TagModel> getAllWorkspaceTagsByWorkspaceId(String workspaceId) {
         try {
             Objects.requireNonNull(workspaceId, "WorkspaceId cannot be null");
 
             // Fetch workspace tags belonging to the workspace
-            List<WorkspaceTagModel> workspaceTags = tagRepository.getAllWorkspaceTagsByWorkspaceId(workspaceId);
+            List<TagModel> workspaceTags = tagRepository.getAllWorkspaceTagsByWorkspaceId(workspaceId);
 
             return workspaceTags;
         } catch (Exception e) {
@@ -89,7 +90,7 @@ public class TagService {
         try {
             Objects.requireNonNull(workspaceId, "WorkspaceId cannot be null");
 
-            List<TagModel> tagModels = getAllEntriesByOwnerId(workspaceId);
+            List<TagModel> tagModels = getAllWorkspaceTagsByWorkspaceId(workspaceId);
 
             boolean isDuplicate = tagModels.stream()
                     .anyMatch(tag -> tag.getTagName().equalsIgnoreCase(request.getTagName()));
@@ -110,31 +111,7 @@ public class TagService {
         }
     }
 
-    // Create a new tag
-    public TagModel createEntry(TagRequest request) {
-        try {
-            List<TagModel> tagModels = getAllEntriesByOwnerId(request.getOwnerId());
-
-            boolean isDuplicate = tagModels.stream()
-                    .anyMatch(tag -> tag.getTagName().equalsIgnoreCase(request.getTagName()));
-
-            if (isDuplicate) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST ,"Tag with name " + request.getTagName() + " already exists");
-            }
-
-            TagModel tag = new TagModel();
-            tag.setTagName(request.getTagName());
-            tag.setColorCode(
-                    (request.getColorCode() == null || request.getColorCode().isEmpty()) ? "E4E0E1" : request.getColorCode());
-
-            return tagRepository.save(tag);
-        } catch (Exception e) {
-            throw new RuntimeException("Error creating tag: " + e.getMessage());
-        }
-    }
-
-
-    public List<TagModel> getAllEntriesByOwnerId(String ownerId) {
+    public List<TagModel> getAllPersonalTags(String ownerId) {
         try {
             Objects.requireNonNull(ownerId, "OwnerId cannot be null");
 
@@ -142,35 +119,34 @@ public class TagService {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "OwnerId not found");
             }
 
-            return tagRepository.getAllEntriesByOwnerId(ownerId);
+            return tagRepository.getAllPersonalTagsByUserId(ownerId);
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }
 
-    public TagModel updateEntry(String id, TagRequest request) {
+    public TagModel updateTag(String id, TagRequest request) {
         try {
             Objects.requireNonNull(id, "ID cannot be null");
-
-            if (!userRepository.existsById(request.getOwnerId())) {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "OwnerId not found");
-            }
 
             TagModel tagModel = tagRepository.findById(id)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tag with ID " + id + " not found"));
 
-            List<TagModel> tagModels = getAllEntriesByOwnerId(request.getOwnerId());
-
-            Optional<TagModel> existingTag = tagModels.stream()
-                    .filter(tag -> tag.getTagName().equals(request.getTagName()) && !tag.getTagId().equals(id))
-                    .findFirst();
-
-            if (existingTag.isPresent()) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tag with name " + request.getTagName() + " already exists");
+            if (request.getTagName() != null) {
+                if (request.getTagName().isEmpty()) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "TagName cannot be empty");
+                } else {
+                    tagModel.setTagName(request.getTagName());
+                }
             }
 
-            tagModel.setTagName(request.getTagName());
-            tagModel.setColorCode((request.getColorCode() == null || request.getColorCode().isEmpty()) ? "E4E0E1" : request.getColorCode());
+            if (request.getColorCode() != null) {
+                if (request.getColorCode().isEmpty()) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "ColorCode cannot be empty");
+                } else {
+                    tagModel.setColorCode(request.getColorCode());
+                }
+            }
 
             return tagRepository.save(tagModel);
         } catch (ResponseStatusException e) {
@@ -183,6 +159,14 @@ public class TagService {
     // delete tag
     public void deleteEntry(String id) {
         try {
+            Objects.requireNonNull(id, "ID cannot be null");
+
+            List<DiaryModel> diaryModels = diaryRepository.findAllByTagIdsContains(id);
+            if (!diaryModels.isEmpty()) {
+                diaryModels.forEach(diaryModel -> diaryModel.getTagIds().remove(id));
+                diaryRepository.saveAll(diaryModels);
+            }
+
             tagRepository.deleteById(id);
         } catch (NoSuchElementException e) {
             throw new NoSuchElementException("Tag with id " + id + " not found");
