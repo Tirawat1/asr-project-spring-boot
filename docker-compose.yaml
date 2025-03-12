@@ -1,3 +1,5 @@
+version: "3.8"
+
 services:
   texttospeechbackend:
     build:
@@ -7,24 +9,73 @@ services:
     restart: always
     depends_on:
       - mongodb
+      - minio
     ports:
       - "8080:8080"
     networks:
-      - mongo-network
+      - backend-network
+    environment:
+      SPRING_APPLICATION_NAME: TextToSpeech
+      SPRING_SECURITY_USER_NAME: root
+      SPRING_SECURITY_USER_PASSWORD: root
+      SERVER_PORT: 8080
+
+      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/asr_thai_backend
+      SPRING_DATA_MONGODB_DATABASE: asr_thai_backend
+
+      MINIO_URL: http://minio:9000
+      MINIO_ACCESS_KEY: admin
+      MINIO_SECRET_KEY: P@ssw0rd64
 
   mongodb:
     image: mongo:latest
-    container_name: "mongodb"
+    container_name: mongodb
+    restart: always
     ports:
-      - 27070:27017
+      - "27017:27017"
     volumes:
       - mongo-data:/data/db
     networks:
-      - mongo-network
+      - backend-network
+
+  minio:
+    image: quay.io/minio/minio
+    container_name: minio
+    restart: always
+    ports:
+      - "9000:9000" # MinIO API
+      - "9001:9001" # MinIO Console UI
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: P@ssw0rd64
+      MINIO_HTTP_BODY_SIZE_LIMIT: "5GB"
+    volumes:
+      - minio-data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - backend-network
+
+  minio-client:
+    image: minio/mc
+    depends_on:
+      - minio
+    entrypoint: [
+        "/bin/sh",
+        "-c",
+        "
+        sleep 5;
+        mc alias set minio-alias http://minio:9000 admin P@ssw0rd64;
+        mc mb minio-alias/audio-bucket || true;
+        exit 0;
+        ",
+      ]
+    networks:
+      - backend-network
 
 volumes:
   mongo-data:
+  minio-data:
 
 networks:
-  mongo-network:
+  backend-network:
     driver: bridge
