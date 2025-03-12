@@ -14,8 +14,8 @@ import java.util.List;
 public interface DiaryFolderRepository extends MongoRepository<DiaryFolderModel, String> {
     // List<DiaryFolderModel> findByParentFolderId(String parentFolderId);
     @Query("{ 'userId': ?0, '_class': 'personalDiaryFolder' }")
-    List<PersonalDiaryFolderModel> findPersonalFoldersByUserId(String userId);
+    List<DiaryFolderModel> findPersonalFoldersByUserId(String userId);
 
     @Query("{ 'workspaceId': ?0, '_class': 'workspaceDiaryFolder' }")
-    List<WorkspaceDiaryFolderModel> findWorkspaceFoldersByWorkspaceId(String workspaceId);
+    List<DiaryFolderModel> findWorkspaceFoldersByWorkspaceId(String workspaceId);
 }
