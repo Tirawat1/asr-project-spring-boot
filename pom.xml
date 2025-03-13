@@ -99,7 +99,7 @@
 		<dependency>
 			<groupId>io.minio</groupId>
 			<artifactId>minio</artifactId>
-			<version>RELEASE</version>
+			<version>8.5.17</version>
 		</dependency>
 
 		<dependency>
