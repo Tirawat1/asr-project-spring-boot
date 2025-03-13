@@ -108,25 +108,28 @@ public class DiaryService {
 
 
     public DiaryModel createEntry(DiaryRequest request) {
-
-        try{
+        try {
             if (request.getTitle() == null || request.getTitle().trim().isEmpty()) {
                 throw new IllegalArgumentException("Title cannot be empty");
             }
             if (request.getContent() == null || request.getContent().isEmpty()) {
                 throw new IllegalArgumentException("Content cannot be empty");
             }
-             DiaryModel diary = new DiaryModel();
-        diary.setTitle(request.getTitle());
-        diary.setContent(processContent(request.getContent()));
+            if (request.getUserId() == null || request.getUserId().isEmpty()) {
+                throw new IllegalArgumentException("User Id cannot be empty");
+            }
+            DiaryModel diary = new DiaryModel();
+            diary.setUserId(request.getUserId());
+            diary.setTitle(request.getTitle());
+            diary.setContent(processContent(request.getContent()));
 
-        if (request.getTagIds() == null) {
-            diary.setTagIds(new ArrayList<>());
-        } else {
-            diary.setTagIds(request.getTagIds());
-        }
+            if (request.getTagIds() == null) {
+                diary.setTagIds(new ArrayList<>());
+            } else {
+                diary.setTagIds(request.getTagIds());
+            }
 
-        return repository.save(diary);
+            return repository.save(diary);
         
         }catch(IllegalArgumentException e){
             throw new RuntimeException("Validation failed: " + e.getMessage());

@@ -19,6 +19,7 @@ public class DiaryModel {
     private String title;
     private List<Map<String, Object>> content;
     private List<String> tagIds;
+    private String userId;
 
     @CreatedDate
     private Instant createdAt;
