@@ -1,12 +1,18 @@
 package cs.project.TextToSpeech.controller;
 
 import cs.project.TextToSpeech.services.MinioService;
+
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.google.common.net.HttpHeaders;
+
+import java.io.InputStream;
 import java.util.Map;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+
 
 @RestController
 @RequestMapping("/minio")
@@ -24,13 +30,42 @@ public class MinioController {
     }
 
     @GetMapping("/download/{filename}")
-    public Map<String, String> getDownloadUrl(@PathVariable String filename) throws Exception {
-        String url = minioService.getAudioPresignedUrl(filename);
-        return Map.of("url", url);
+    public ResponseEntity<?> downloadFile(@PathVariable String filename) throws Exception {
+        try {
+            InputStream fileInputStream = minioService.getAudioFile(filename);
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
+                    .body(new InputStreamResource(fileInputStream));
+
+        } catch (RuntimeException e) {
+            // If file retrieval fails, return an error response
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("File not found or error retrieving file: " + e.getMessage());
+        }
+    }   
+
+    @GetMapping("/downloadByUrl/{filename}")
+    public String getFileByUrl(@PathVariable String filename) {
+        try {
+            String presignedUrl = minioService.getAudioPresignedUrl(filename);
+
+            return presignedUrl;
+        } catch (Exception e) {
+            return "Error generating presigned URL: " + e.getMessage();
+        }
+    }
+    
+
+    @GetMapping("/list")
+    public Map<String, Object> listAudioFiles() throws Exception {
+        return Map.of("audioFiles", minioService.listAudioFiles());
     }
 
-    @GetMapping("/test")
-    public String getMethodName(@RequestParam String param) {
-        return "hello world!";
+    @DeleteMapping("/delete/{filename}")
+    public String deleteAudioFile(@PathVariable String filename) throws Exception {
+        minioService.deleteAudioFile(filename);
+        return "File deleted successfully";
     }
+
 }
