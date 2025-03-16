@@ -18,4 +18,5 @@ public class DiaryRequest {
     private List<Map<String, Object>> content;
 
     private List<String> tagIds;
+    private String userId;
 }
