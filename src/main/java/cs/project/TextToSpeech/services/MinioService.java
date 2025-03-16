@@ -10,6 +10,7 @@ import io.minio.StatObjectArgs;
 import io.minio.http.Method;
 import io.minio.messages.Item;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -23,6 +24,10 @@ import java.util.concurrent.TimeUnit;
 public class MinioService {
     private final MinioClient minioClient;
     private final String audioBucket = "audio-bucket";
+
+
+    @Autowired
+    private AsrService asrService;
 
     @Value("${minio.url}")
     private String minioUrl;
@@ -118,25 +123,12 @@ public class MinioService {
         );
     }
 
-    // public String getFileUrl(String fileName) throws Exception {
-    //     return minioClient.getObject(
-    //             GetObjectArgs.builder()
-    //                     .bucket(audioBucket)
-    //                     .object(fileName)
-    //                     .build()
-    //     ).url();
-    // }
-
-
     public String getAudioPresignedUrl(String fileName) throws Exception {
         try {
             // String minioUrl = System.getenv("MINIO_URL");
 
             // Log environment details for debugging
-            
-            System.out.println("Access Key: " + accessKey);
-            System.out.println("Secret Key: " + secretKey);
-            System.out.println("Generating Presigned URL for file: " + fileName);
+        
 
             // Generate presigned URL for the object
             String url = minioClient.getPresignedObjectUrl(
@@ -149,15 +141,31 @@ public class MinioService {
             );
 
             System.out.println("Generated Presigned URL: " + url);
-
-            if (minioUrl != null && minioUrl.contains("minio:9000")) {
-                url = url.replace("http://minio:9000", "http://localhost:9000");
-            }
-
+            
             return url;
         } catch (Exception e) {
             System.err.println("Error generating presigned URL: " + e.getMessage());
             throw new RuntimeException("Error generating presigned URL: " + e.getMessage(), e);
+        }
+    }
+
+    public String processTranscribe(String fileName) throws Exception {
+        try
+        {
+            String url = minioClient.getPresignedObjectUrl(
+                    GetPresignedObjectUrlArgs.builder()
+                            .method(Method.GET)
+                            .bucket(audioBucket)
+                            .object(fileName)
+                            .expiry(1, TimeUnit.HOURS)  
+                            .build()
+            );
+            // Send the audio file to the ASR service
+            String transcribe = asrService.sendAudioToEnhanceService(url);
+
+            return transcribe;
+        } catch (Exception e) {
+            throw new RuntimeException("Error generating Transcript URL: " + e.getMessage(), e);
         }
     }
 

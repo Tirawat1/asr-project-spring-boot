@@ -55,6 +55,17 @@ public class MinioController {
             return "Error generating presigned URL: " + e.getMessage();
         }
     }
+
+    @GetMapping("/transcribe/{filename}")
+    public String transcribeText(@PathVariable String filename){
+        try{
+            String transcribe = minioService.processTranscribe(filename);
+
+            return transcribe;
+        }catch(Exception e){
+            return "Error generating a transcribe: " + e.getMessage(); 
+        }
+    }
     
 
     @GetMapping("/list")

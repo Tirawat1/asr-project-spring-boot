@@ -54,7 +54,6 @@ services:
 
 volumes:
   mongo-data:
-  minio-data:
 
 networks:
   backend-network:

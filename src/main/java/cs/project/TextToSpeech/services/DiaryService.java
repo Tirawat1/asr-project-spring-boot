@@ -10,9 +10,7 @@ import cs.project.TextToSpeech.models.Request.DiaryRequest;
 import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.NoSuchElementException;
 
 import org.springframework.web.client.RestClientException;
@@ -56,55 +54,55 @@ public class DiaryService {
 
     }
 
-    private List<Map<String, Object>> processContent(List<Map<String, Object>> content) {
-    try {
-        if (content == null || content.isEmpty()) {
-            throw new IllegalArgumentException("Content cannot be null or empty");
-        }
+//     private List<Map<String, Object>> processContent(List<Map<String, Object>> content) {
+//     try {
+//         if (content == null || content.isEmpty()) {
+//             throw new IllegalArgumentException("Content cannot be null or empty");
+//         }
 
-        for (Map<String, Object> item : content) {
-            if (item.containsKey("insert") && item.get("insert") instanceof Map) {
-                Map<String, Object> insertMap = (Map<String, Object>) item.get("insert");
-                if (insertMap.containsKey("custom") && insertMap.get("custom") instanceof Map) {
-                    Map<String, Object> customMap = (Map<String, Object>) insertMap.get("custom");
-                    if (customMap.containsKey("audio")) {
-                        String audioUrl = customMap.get("audio").toString();
-                        if (audioUrl.trim().isEmpty()) {
-                            throw new IllegalArgumentException("Audio URL cannot be empty");
-                        }
+//         for (Map<String, Object> item : content) {
+//             if (item.containsKey("insert") && item.get("insert") instanceof Map) {
+//                 Map<String, Object> insertMap = (Map<String, Object>) item.get("insert");
+//                 if (insertMap.containsKey("custom") && insertMap.get("custom") instanceof Map) {
+//                     Map<String, Object> customMap = (Map<String, Object>) insertMap.get("custom");
+//                     if (customMap.containsKey("audio")) {
+//                         String audioUrl = customMap.get("audio").toString();
+//                         if (audioUrl.trim().isEmpty()) {
+//                             throw new IllegalArgumentException("Audio URL cannot be empty");
+//                         }
 
-                        String transcribedText = sendAudioToEnhanceService(audioUrl);
-                        item.put("transcription", transcribedText);
-                    }
-                }
-            }
-        }
-        return content;
-    } catch (IllegalArgumentException e) {
-        throw new RuntimeException("Validation failed: " + e.getMessage());
-    } catch (Exception e) {
-        throw new RuntimeException("Error processing content: " + e.getMessage());
-    }
-}
+//                         String transcribedText = sendAudioToEnhanceService(audioUrl);
+//                         item.put("transcription", transcribedText);
+//                     }
+//                 }
+//             }
+//         }
+//         return content;
+//     } catch (IllegalArgumentException e) {
+//         throw new RuntimeException("Validation failed: " + e.getMessage());
+//     } catch (Exception e) {
+//         throw new RuntimeException("Error processing content: " + e.getMessage());
+//     }
+// }
 
-    private String sendAudioToEnhanceService(String audioUrl) {
-    try {
-        if (audioUrl == null || audioUrl.trim().isEmpty()) {
-            throw new IllegalArgumentException("Audio URL cannot be null or empty");
-        }
+//     private String sendAudioToEnhanceService(String audioUrl) {
+//     try {
+//         if (audioUrl == null || audioUrl.trim().isEmpty()) {
+//             throw new IllegalArgumentException("Audio URL cannot be null or empty");
+//         }
 
-        Map<String, String> requestBody = new HashMap<>();
-        requestBody.put("audioUrl", audioUrl);
+//         Map<String, String> requestBody = new HashMap<>();
+//         requestBody.put("audioUrl", audioUrl);
 
-        return restTemplate.postForObject("http://192.168.1.38:5114/enhance_audio", requestBody, String.class);
-    } catch (IllegalArgumentException e) {
-        throw new RuntimeException("Validation failed: " + e.getMessage());
-    } catch (RestClientException e) {
-        throw new RuntimeException("Failed to communicate with the audio enhancement service: " + e.getMessage());
-    } catch (Exception e) {
-        throw new RuntimeException("Unexpected error during audio processing: " + e.getMessage());
-    }
-}
+//         return restTemplate.postForObject("http://192.168.1.38:5114/enhance_audio", requestBody, String.class);
+//     } catch (IllegalArgumentException e) {
+//         throw new RuntimeException("Validation failed: " + e.getMessage());
+//     } catch (RestClientException e) {
+//         throw new RuntimeException("Failed to communicate with the audio enhancement service: " + e.getMessage());
+//     } catch (Exception e) {
+//         throw new RuntimeException("Unexpected error during audio processing: " + e.getMessage());
+//     }
+// }
 
 
     public DiaryModel createEntry(DiaryRequest request) {
@@ -118,7 +116,8 @@ public class DiaryService {
             }
              DiaryModel diary = new DiaryModel();
         diary.setTitle(request.getTitle());
-        diary.setContent(processContent(request.getContent()));
+        // diary.setContent(processContent(request.getContent()));
+        diary.setContent(request.getContent());
 
         if (request.getTagIds() == null) {
             diary.setTagIds(new ArrayList<>());
