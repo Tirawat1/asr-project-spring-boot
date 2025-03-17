@@ -1,5 +1,5 @@
 package cs.project.TextToSpeech.infra.enums;
 
-public enum PermissionUser {
+public enum UserPermission {
     OWNER, EDITOR, VIEWER
 }

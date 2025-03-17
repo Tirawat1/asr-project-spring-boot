@@ -1,14 +1,17 @@
 package cs.project.TextToSpeech.services;
 
-import cs.project.TextToSpeech.infra.enums.PermissionUser;
 import cs.project.TextToSpeech.infra.repository.UserRepository;
-import cs.project.TextToSpeech.infra.repository.WorkSpaceRepository;
+import cs.project.TextToSpeech.infra.repository.WorkspaceRepository;
+import cs.project.TextToSpeech.models.DTO.workspace.CreateWorkspaceDTO;
+import cs.project.TextToSpeech.models.DTO.workspace.UpdateWorkspaceDTO;
+import cs.project.TextToSpeech.models.DTO.workspace.WorkspaceWithMembersDTO;
+import cs.project.TextToSpeech.models.DTO.workspaceMember.CreateWorkspaceMemberDTO;
+import cs.project.TextToSpeech.models.DTO.workspaceMember.WorkspaceMemberWithUserDTO;
+import cs.project.TextToSpeech.models.WorkspaceIcon;
+import cs.project.TextToSpeech.models.WorkspaceMemberModel;
 import cs.project.TextToSpeech.models.Request.DiaryFolderRequest;
-import cs.project.TextToSpeech.models.Request.RemovedMemberRequest;
 import cs.project.TextToSpeech.models.UserModel;
-import cs.project.TextToSpeech.models.WorkSpaceModel;
-import cs.project.TextToSpeech.models.DTO.WorkspaceWithUsersDTO;
-import cs.project.TextToSpeech.models.Request.WorkSpaceRequest;
+import cs.project.TextToSpeech.models.WorkspaceModel;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -16,62 +19,74 @@ import org.springframework.stereotype.Service;
 import java.util.*;
 
 @Service
-public class WorkSpaceService {
-    private final WorkSpaceRepository workSpaceRepository;
+public class WorkspaceService {
+    private final WorkspaceRepository workSpaceRepository;
     private final UserRepository userRepository;
+    private final WorkspaceMemberService workspaceMemberService;
+    private final DiaryFolderService diaryFolderService;
 
     @Autowired
-    private DiaryFolderService diaryFolderService;
-
-    @Autowired
-    public WorkSpaceService(WorkSpaceRepository workSpaceRepository, UserRepository userRepository) {
+    public WorkspaceService(
+            WorkspaceRepository workSpaceRepository,
+            UserRepository userRepository,
+            WorkspaceMemberService workspaceMemberService,
+            DiaryFolderService diaryFolderService) {
         this.workSpaceRepository = workSpaceRepository;
         this.userRepository = userRepository;
+        this.workspaceMemberService = workspaceMemberService;
+        this.diaryFolderService = diaryFolderService;
     }
 
-
     // Get all workspaces
-    public List<WorkSpaceModel> getAllWorkspaces() {
+    public List<WorkspaceModel> getAllWorkspaces() {
         try {
             return workSpaceRepository.findAll();
         } catch (Exception e) {
             throw new RuntimeException("Error getting all workspaces: " + e.getMessage());
         }
     }
-    // Get all workspaces Data by user email
-    public List<WorkspaceWithUsersDTO> getWorkspacesByUserId(String userId) {
+
+    // Find user workspaces
+    public List<WorkspaceModel> getUserWorkspaces(String userId) {
         try {
-            if (userId == null || userId.isEmpty()) {
-                throw new IllegalArgumentException("userId is null or empty");
-            }
+            // Find user
+            UserModel user = userRepository.findById(userId).orElse(null);
+            Objects.requireNonNull(user, "User with id" + userId + "not found");
 
-            if (!userRepository.existsById(userId)) {
-                throw new IllegalArgumentException("user not found");
-            }
+            // Find workspaceMemberModel of the user
+            List<WorkspaceMemberModel> memberModels = workspaceMemberService.findByEmail(user.getEmail());
 
-            // Get workspaces where the user is a member (owner , editor, viewer)
-            List<WorkSpaceModel> workspaces = workSpaceRepository.findAll()
-                    .stream()
-                    .filter(workspace -> workspace.getMembers() != null)
-                    .toList();
+            // Find each workspace
+            List<WorkspaceModel> workSpaceModels = new ArrayList<>();
+            memberModels.forEach(e -> {
+                workSpaceRepository.findById(e.getWorkspaceId()).ifPresent(workSpaceModels::add);
+            });
 
-            return workspaces.stream().map(workspace -> {
-                // Get all members' details (excluding owner)
-                List<UserModel> members = workspace.getMembers().keySet().stream() // <String, PermissinUser> (email, permission)
-                    .map(memberId -> userRepository.findById(memberId).orElse(null))
-                    .filter(Objects::nonNull)
-                    .toList();
-
-                return new WorkspaceWithUsersDTO(workspace, members);
-            }).toList();
-
+            return workSpaceModels;
         } catch (Exception e) {
-            throw new RuntimeException("Error getting all workspaces", e);
+            throw new RuntimeException("Error getting all workspaces: " + e.getMessage());
+        }
+    }
+
+    public List<WorkspaceWithMembersDTO> getUserWorkspacesWithMembers(String userId) {
+        try {
+            UserModel user = userRepository.findById(userId).orElse(null);
+            Objects.requireNonNull(user, "User with id" + userId + "not found");
+
+            List<WorkspaceMemberModel> memberModels = workspaceMemberService.findByEmail(user.getEmail());
+            List<WorkspaceWithMembersDTO> workSpaceWithMembersDTOs = new ArrayList<>();
+            memberModels.forEach(e -> {
+                workSpaceWithMembersDTOs.add(getWorkspaceWithMembers(e.getWorkspaceId()));
+            });
+
+            return workSpaceWithMembersDTOs;
+        } catch (Exception e) {
+            throw new RuntimeException("Error getting all workspaces: " + e.getMessage());
         }
     }
 
     // Get a workspace by ID
-    public WorkSpaceModel getWorkspaceById(String id) {
+    public WorkspaceModel getWorkspaceById(String id) {
         try{
             if (id == null || id.trim().isEmpty()) {
                 throw new IllegalArgumentException("ID cannot be empty");
@@ -87,55 +102,86 @@ public class WorkSpaceService {
         
     }
 
-    // Create a new workspace
-    public WorkspaceWithUsersDTO createWorkspace(String userId, WorkSpaceRequest workspaceRequest) {
-    try {
-        // Validate workspace name
-        if (workspaceRequest.getName() == null || workspaceRequest.getName().trim().isEmpty()) {
-            throw new IllegalArgumentException("Workspace name cannot be empty");
-        }
+    public WorkspaceWithMembersDTO getWorkspaceWithMembers(String id) {
+        try {
+            WorkspaceModel workspace = getWorkspaceById(id);
+            List<WorkspaceMemberModel> memberModels = workspaceMemberService.findByWorkspaceId(workspace.getId());
 
-        // Create the workspace
-        WorkSpaceModel workspace = new WorkSpaceModel();
-        workspace.setName(workspaceRequest.getName());
-        if (workspaceRequest.getDescription() != null){
-            workspace.setDescription(workspaceRequest.getDescription());
-        }
+            List<WorkspaceMemberWithUserDTO> workspaceMemberWithUserDTOs = new ArrayList<>();
+            for (WorkspaceMemberModel memberModel : memberModels) {
+                WorkspaceMemberWithUserDTO workspaceMemberWithUserDTO =
+                        workspaceMemberService.getWorkspaceMemberWithUserDTOByWorkspaceMemberId(
+                            memberModel.getId()
+                        );
 
-        if (workspaceRequest.getIcon() != null) {
-            workspace.setIcon(workspaceRequest.getIcon());
-        }
-
-        // Set the owner in the members map
-        Map<String, PermissionUser> updatedMembers = new HashMap<>();
-        updatedMembers.put(userId, PermissionUser.OWNER); // Set the user as the owner
-
-        if (workspaceRequest.getInvitedMemberEmails() != null && !workspaceRequest.getInvitedMemberEmails().isEmpty()) {
-            for (String email : workspaceRequest.getInvitedMemberEmails()) {
-                if (userRepository.existsByEmail(email)) {
-                    UserModel userModel = userRepository.findByEmail(email).get();
-                    updatedMembers.put(userModel.getId(), PermissionUser.VIEWER);
-                }
+                workspaceMemberWithUserDTOs.add(workspaceMemberWithUserDTO);
             }
+
+            return new WorkspaceWithMembersDTO(
+                    workspace,
+                    workspaceMemberWithUserDTOs
+            );
+        } catch (Exception e) {
+            throw new RuntimeException("Error getting workspace: " + e.getMessage());
         }
-
-        workspace.setMembers(updatedMembers);
-        workspace = workSpaceRepository.save(workspace);
-
-        DiaryFolderRequest diaryFolderRequest = new DiaryFolderRequest();
-        diaryFolderRequest.setFolderName("Default");
-        diaryFolderRequest.setDiaryIds(new ArrayList<>());
-
-        diaryFolderService.createWorkspaceDiaryFolder(workspace.getId(), diaryFolderRequest);
-
-        return new WorkspaceWithUsersDTO(workspace, userRepository.findAllById(workspace.getMembers().keySet()));
-
-    } catch (IllegalArgumentException e) {
-        throw new RuntimeException("Validation failed: " + e.getMessage());
-    } catch (Exception e) {
-        throw new RuntimeException("Error creating workspace: " + e.getMessage());
     }
-}
+
+    // Create a new workspace
+    public WorkspaceWithMembersDTO createWorkspace(String userId, CreateWorkspaceDTO createWorkspaceDTO) {
+        try {
+
+            UserModel user = userRepository.findById(userId).orElse(null);
+            Objects.requireNonNull(user, "User with id" + userId + "not found");
+
+            String name = createWorkspaceDTO.getName();
+            String description = createWorkspaceDTO.getDescription();
+            WorkspaceIcon icon = createWorkspaceDTO.getIcon();
+            String ownerEmail = user.getEmail();
+            List<CreateWorkspaceMemberDTO> members = createWorkspaceDTO.getMembers();
+
+            // Create the workspace
+            WorkspaceModel workspace = new WorkspaceModel();
+            workspace.setName(name);
+            workspace.setDescription(description);
+            workspace.setIcon(icon);
+
+            workspace = workSpaceRepository.save(workspace);
+
+            WorkspaceMemberModel owner =  workspaceMemberService.addOwner(workspace.getId(), ownerEmail);
+
+            List<WorkspaceMemberModel> memberModels = new ArrayList<>();
+            memberModels.add(owner);
+            for (CreateWorkspaceMemberDTO member : members) {
+                memberModels.add(workspaceMemberService.inviteMember(workspace.getId(), member));
+            }
+
+            List<WorkspaceMemberWithUserDTO> workspaceMemberWithUserDTOs = new ArrayList<>();
+            for (WorkspaceMemberModel memberModel : memberModels) {
+                WorkspaceMemberWithUserDTO workspaceMemberWithUserDTO =
+                        workspaceMemberService.getWorkspaceMemberWithUserDTOByWorkspaceMemberId(
+                            memberModel.getId()
+                        );
+
+                workspaceMemberWithUserDTOs.add(workspaceMemberWithUserDTO);
+            }
+
+            DiaryFolderRequest diaryFolderRequest = new DiaryFolderRequest();
+            diaryFolderRequest.setFolderName("Default");
+            diaryFolderRequest.setDiaryIds(new ArrayList<>());
+
+            diaryFolderService.createWorkspaceDiaryFolder(workspace.getId(), diaryFolderRequest);
+
+            return new WorkspaceWithMembersDTO(
+                    workspace,
+                    workspaceMemberWithUserDTOs
+            );
+
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Validation failed: " + e.getMessage());
+        } catch (Exception e) {
+            throw new RuntimeException("Error creating workspace: " + e.getMessage());
+        }
+    }
 
 
     // Delete a workspace by ID
@@ -147,7 +193,8 @@ public class WorkSpaceService {
 
             // Delete a workspace diary folder (not finish yet)
             diaryFolderService.deleteWorkspaceDiaryFolder(id);
-
+            // Delete each member
+            workspaceMemberService.deleteWorkspaceMemberByWorkspaceId(id);
             // Delete the workspace
             workSpaceRepository.deleteById(id);
             
@@ -158,69 +205,29 @@ public class WorkSpaceService {
         }
     }
 
-    public WorkspaceWithUsersDTO updateWorkspace(String id, WorkSpaceRequest workspaceRequest) {
+    public WorkspaceWithMembersDTO updateWorkspace(String id, UpdateWorkspaceDTO updateWorkspaceDTO) {
         try {
-            if (id == null || id.trim().isEmpty()) {
-                throw new IllegalArgumentException("ID cannot be empty");
-            }
+            WorkspaceModel workSpace = workSpaceRepository.findById(id).orElse(null);
+            Objects.requireNonNull(workSpace, "Workspace with id " + id + " not found");
+            if (updateWorkspaceDTO.getName() != null) workSpace.setName(updateWorkspaceDTO.getName());
+            if (updateWorkspaceDTO.getDescription() != null) workSpace.setDescription(updateWorkspaceDTO.getDescription());
+            if (updateWorkspaceDTO.getIcon() != null) workSpace.setIcon(updateWorkspaceDTO.getIcon());
+            workSpaceRepository.save(workSpace);
 
-            WorkSpaceModel workspace = getWorkspaceById(id);
-
-            if (workspaceRequest.getName() != null) {
-                if (workspaceRequest.getName().trim().isEmpty()) {
-                    throw new IllegalArgumentException("Workspace name cannot be empty");
-                } else {
-                    workspace.setName(workspaceRequest.getName());
-                }
-            }
-
-            if (workspaceRequest.getDescription() != null) {
-                workspace.setDescription(workspaceRequest.getDescription());
-            }
-
-            if (workspaceRequest.getIcon() != null) {
-                workspace.setIcon(workspaceRequest.getIcon());
-            }
-
-            Map<String, PermissionUser> updatedMembers = workspace.getMembers();
-            if (workspaceRequest.getMembers() != null && !workspaceRequest.getMembers().isEmpty()) {
-                for (String memberId : workspaceRequest.getMembers().keySet()) {
-                    updatedMembers.put(memberId, workspaceRequest.getMembers().get(memberId));
-                }
-                workspace.setMembers(updatedMembers);
-            }
-
-            if (workspaceRequest.getInvitedMemberEmails() != null && !workspaceRequest.getInvitedMemberEmails().isEmpty()) {
-                for (String email : workspaceRequest.getInvitedMemberEmails()) {
-                    if (userRepository.existsByEmail(email)) {
-                        UserModel userModel = userRepository.findByEmail(email).get();
-                        updatedMembers.put(userModel.getId(), PermissionUser.VIEWER);
-                    }
-                }
-            }
-
-            workspace = workSpaceRepository.save(workspace);
-
-            return new WorkspaceWithUsersDTO(workspace, userRepository.findAllById(workspace.getMembers().keySet()));
-
-
-        } catch (IllegalArgumentException e) {
-            throw new RuntimeException("Validation failed: " + e.getMessage());
+            return getWorkspaceWithMembers(workSpace.getId());
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
         }
     }
 
-    public void removeMember(String id, RemovedMemberRequest request) {
+    public WorkspaceWithMembersDTO inviteMembers(String id, List<CreateWorkspaceMemberDTO> createWorkspaceMemberDTOs) {
         try {
-            Objects.requireNonNull(id, "ID cannot be empty");
-            Objects.requireNonNull(request.getRemovedUserId(), "UserId cannot be empty");
-
-            WorkSpaceModel workspace = getWorkspaceById(id);
-            if (workspace.getMembers().containsKey(request.getRemovedUserId())) {
-                workspace.getMembers().remove(request.getRemovedUserId());
-                workSpaceRepository.save(workspace);
+            for (CreateWorkspaceMemberDTO member : createWorkspaceMemberDTOs) {
+                workspaceMemberService.inviteMember(id, member);
             }
-        } catch (IllegalArgumentException e) {
-            throw new RuntimeException("Validation failed: " + e.getMessage());
+            return getWorkspaceWithMembers(id);
+        } catch (Exception e) {
+            throw new RuntimeException("Error inviting members: " + e.getMessage());
         }
     }
 }

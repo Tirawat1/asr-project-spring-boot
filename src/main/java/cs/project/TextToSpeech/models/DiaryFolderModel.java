@@ -18,12 +18,6 @@ public class DiaryFolderModel {
     private String folderName;
     private List<String> diaryIds;
 
-    // @DBRef
-    // private DiaryFolderModel parentFolder;
-
-    // @DBRef
-    // private List<DiaryFolderModel> subFolders;
-
     @CreatedDate
     private Instant createdAt;
 
