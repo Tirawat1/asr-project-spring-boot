@@ -117,7 +117,7 @@ public class DiaryService {
             DiaryModel diary = new DiaryModel();
             diary.setUserId(request.getUserId());
             diary.setTitle(request.getTitle());
-            // diary.setContent(processContent(request.getContent()));
+            diary.setContent(request.getContent());
 
             if (request.getTagIds() == null) {
                 diary.setTagIds(new ArrayList<>());
@@ -151,7 +151,7 @@ public class DiaryService {
                 .orElseThrow(() -> new NoSuchElementException("Diary with id " + id + " not found"));
                         diary.setTitle(request.getTitle());
             diary.setContent(request.getContent());
-
+            System.out.println(request.getTitle());
             if (request.getTagIds() == null) {
                 diary.setTagIds(new ArrayList<>());
             } else {
