@@ -22,11 +22,9 @@ public class DiaryService {
     @Autowired
     private final DiaryRepository repository;
 
-    private final RestTemplate restTemplate;
 
     public DiaryService(DiaryRepository repository, RestTemplate restTemplate) {
         this.repository = repository;
-        this.restTemplate = restTemplate;
     }
 
     public List<DiaryModel> getAllEntries() {
@@ -119,7 +117,7 @@ public class DiaryService {
             DiaryModel diary = new DiaryModel();
             diary.setUserId(request.getUserId());
             diary.setTitle(request.getTitle());
-            diary.setContent(processContent(request.getContent()));
+            // diary.setContent(processContent(request.getContent()));
 
             if (request.getTagIds() == null) {
                 diary.setTagIds(new ArrayList<>());
