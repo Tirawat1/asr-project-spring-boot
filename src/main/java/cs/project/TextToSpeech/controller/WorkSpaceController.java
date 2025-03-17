@@ -2,58 +2,67 @@ package cs.project.TextToSpeech.controller;
 
 import java.util.List;
 
-import cs.project.TextToSpeech.models.Request.RemovedMemberRequest;
+import cs.project.TextToSpeech.models.DTO.workspace.CreateWorkspaceDTO;
+import cs.project.TextToSpeech.models.DTO.workspace.UpdateWorkspaceDTO;
+import cs.project.TextToSpeech.models.DTO.workspace.WorkspaceWithMembersDTO;
+import cs.project.TextToSpeech.models.DTO.workspaceMember.CreateWorkspaceMemberDTO;
+import cs.project.TextToSpeech.services.WorkspaceMemberService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import cs.project.TextToSpeech.models.WorkSpaceModel;
-import cs.project.TextToSpeech.models.DTO.WorkspaceWithUsersDTO;
-import cs.project.TextToSpeech.models.Request.WorkSpaceRequest;
-import cs.project.TextToSpeech.services.WorkSpaceService;
+import cs.project.TextToSpeech.models.WorkspaceModel;
+import cs.project.TextToSpeech.services.WorkspaceService;
 import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/workspaces")
-public class WorkSpaceController {
+public class WorkspaceController {
     @Autowired
-    private WorkSpaceService workSpaceService;
+    private WorkspaceService workspaceService;
+    @Autowired
+    private WorkspaceMemberService workspaceMemberService;
 
     @GetMapping
-    public ResponseEntity<List<WorkSpaceModel>> getAllWorkspaces() {
-        return ResponseEntity.ok(workSpaceService.getAllWorkspaces());
+    public ResponseEntity<List<WorkspaceModel>> getAllWorkspaces() {
+        return ResponseEntity.ok(workspaceService.getAllWorkspaces());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<WorkSpaceModel> getWorkspaceById(@PathVariable String id) {
-        return ResponseEntity.ok(workSpaceService.getWorkspaceById(id));
+    public ResponseEntity<WorkspaceModel> getWorkspaceById(@PathVariable String id) {
+        return ResponseEntity.ok(workspaceService.getWorkspaceById(id));
     }
 
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<WorkspaceWithUsersDTO>> getWorkspacesByUserId(@PathVariable String userId) {
-        return ResponseEntity.ok(workSpaceService.getWorkspacesByUserId(userId));
+    public ResponseEntity<List<WorkspaceWithMembersDTO>> getWorkspacesByUserId(@PathVariable String userId) {
+        return ResponseEntity.ok(workspaceService.getUserWorkspacesWithMembers(userId));
     }
 
     @PostMapping("/user/{userId}")
-    public ResponseEntity<WorkspaceWithUsersDTO> createWorkspace(@PathVariable String userId, @Valid @RequestBody WorkSpaceRequest workspaceRequest) {
-        return ResponseEntity.ok(workSpaceService.createWorkspace(userId,workspaceRequest));
+    public ResponseEntity<WorkspaceWithMembersDTO> createWorkspace(@PathVariable String userId, @Valid @RequestBody CreateWorkspaceDTO createWorkspaceDTO) {
+        return ResponseEntity.ok(workspaceService.createWorkspace(userId, createWorkspaceDTO));
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<WorkspaceWithUsersDTO> updateWorkspace(@PathVariable String id, @RequestBody WorkSpaceRequest workspaceRequest) {
-        return ResponseEntity.ok(workSpaceService.updateWorkspace(id, workspaceRequest));
+    public ResponseEntity<WorkspaceWithMembersDTO> updateWorkspace(@PathVariable String id, @RequestBody UpdateWorkspaceDTO updateWorkspaceDTO) {
+        return ResponseEntity.ok(workspaceService.updateWorkspace(id, updateWorkspaceDTO));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteWorkspace(@PathVariable String id) {
-        workSpaceService.deleteWorkspace(id);
+        workspaceService.deleteWorkspace(id);
         return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping("/{id}/members")
-    public ResponseEntity<Void> removeMember(@PathVariable String id, @RequestBody RemovedMemberRequest request) {
-        workSpaceService.removeMember(id, request);
+    @DeleteMapping("/members/{memberId}")
+    public ResponseEntity<Void> removeMember(@PathVariable String memberId) {
+        workspaceMemberService.deleteMember(memberId);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/invite")
+    public ResponseEntity<WorkspaceWithMembersDTO> inviteMembers(@PathVariable String id, @Valid @RequestBody List<CreateWorkspaceMemberDTO> createWorkspaceMemberDTOs) {
+        return ResponseEntity.ok(workspaceService.inviteMembers(id, createWorkspaceMemberDTOs));
     }
 }
     

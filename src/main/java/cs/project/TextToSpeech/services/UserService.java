@@ -2,16 +2,12 @@ package cs.project.TextToSpeech.services;
 
 import java.util.*;
 
-import cs.project.TextToSpeech.infra.repository.DiaryFolderRepository;
-import cs.project.TextToSpeech.infra.repository.DiaryRepository;
+import cs.project.TextToSpeech.infra.repository.*;
 import cs.project.TextToSpeech.models.Request.DiaryFolderRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import cs.project.TextToSpeech.infra.repository.UserRepository;
 import cs.project.TextToSpeech.models.UserModel;
 import cs.project.TextToSpeech.models.Request.UserRequest;
 import org.springframework.web.server.ResponseStatusException;
@@ -22,21 +18,12 @@ public class UserService {
     private final UserRepository userRepository;
 
     @Autowired
-    private final DiaryFolderRepository diaryFolderRepository;
-
-    @Autowired
-    private final DiaryRepository diaryRepository;
-
-    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-    @Autowired
     private DiaryFolderService diaryFolderService;
 
 
     @Autowired
-    public UserService(UserRepository userRepository, DiaryFolderRepository diaryFolderRepository, DiaryRepository diaryRepository) {
+    public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
-        this.diaryFolderRepository = diaryFolderRepository;
-        this.diaryRepository = diaryRepository;
     }
 
     // Get all users
@@ -57,6 +44,16 @@ public class UserService {
             return userRepository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User with ID: " + id));
         }catch (IllegalArgumentException e){
             throw new RuntimeException("Validation failed: " + e.getMessage());
+        }
+    }
+
+    public UserModel getUserByEmail(String email) {
+        try {
+            UserModel user = userRepository.findByEmail(email).orElse(null);
+            Objects.requireNonNull(user, "User not found");
+            return user;
+        } catch (Exception e) {
+            throw new RuntimeException("Error getting user by email: " + e.getMessage());
         }
     }
 
@@ -91,13 +88,13 @@ public class UserService {
             user.setName(userRequest.getName());
             user.setEmail(userRequest.getEmail());
 
-            String hashedPassword = passwordEncoder.encode(userRequest.getPassword());
-            user.setPassword(hashedPassword);
+            user.setPassword(userRequest.getPassword());
+            user = userRepository.save(user);
+
 
             DiaryFolderRequest diaryFolderRequest = new DiaryFolderRequest();
             diaryFolderRequest.setFolderName("Default");
             diaryFolderRequest.setDiaryIds(new ArrayList<>());
-            user = userRepository.save(user);
 
             diaryFolderService.createPersonalDiaryFolder(user.getId(), diaryFolderRequest);
             return user;
@@ -125,8 +122,7 @@ public class UserService {
             user.setName(userRequest.getName());
             user.setEmail(userRequest.getEmail());
 
-            String hashedPassword = passwordEncoder.encode(userRequest.getPassword());
-            user.setPassword(hashedPassword);
+            user.setPassword(userRequest.getPassword());
 
             return userRepository.save(user);
         } catch (IllegalArgumentException e) {
