@@ -15,8 +15,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import cs.project.TextToSpeech.models.UserModel;
+import cs.project.TextToSpeech.models.Request.LoginRequest;
 import cs.project.TextToSpeech.models.Request.UserRequest;
 import cs.project.TextToSpeech.services.UserService;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 
 @RestController
@@ -30,6 +33,13 @@ public class UserController {
     public ResponseEntity<List<UserModel>> getAllUsers() {
         return ResponseEntity.ok(userService.getAllUsers());
     }
+
+    @PostMapping("/login")
+    public String login(@Valid @RequestBody LoginRequest loginRequest) {
+        
+        return userService.login(loginRequest.getEmail(), loginRequest.getPassword());
+    }
+    
 
     @GetMapping("/{id}")
     public ResponseEntity<UserModel> getUserById(@PathVariable String id) {

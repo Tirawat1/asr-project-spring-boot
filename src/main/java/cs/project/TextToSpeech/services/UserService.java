@@ -6,25 +6,44 @@ import cs.project.TextToSpeech.infra.repository.*;
 import cs.project.TextToSpeech.models.Request.DiaryFolderRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import cs.project.TextToSpeech.models.UserModel;
 import cs.project.TextToSpeech.models.Request.UserRequest;
+
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class UserService {
     @Autowired
     private final UserRepository userRepository;
-
     @Autowired
     private DiaryFolderService diaryFolderService;
 
 
-    @Autowired
-    public UserService(UserRepository userRepository) {
+
+    public UserService(UserRepository userRepository ) {
         this.userRepository = userRepository;
     }
+    // login
+
+    public String login(String email, String password) {
+    Optional<UserModel> optionalUser = userRepository.findByEmail(email);
+    if (optionalUser.isEmpty()) {
+        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
+    }
+
+    UserModel user = optionalUser.get();
+    PasswordEncoder encoder = new BCryptPasswordEncoder();
+
+    // Check if the provided password matches the stored hashed password
+    if (!encoder.matches(password, user.getPassword())) {
+        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid password");
+    }
+    return user.getId();
+}
 
     // Get all users
     public List<UserModel> getAllUsers() {
@@ -88,7 +107,8 @@ public class UserService {
             user.setName(userRequest.getName());
             user.setEmail(userRequest.getEmail());
 
-            user.setPassword(userRequest.getPassword());
+            PasswordEncoder encoder = new BCryptPasswordEncoder();
+            user.setPassword(encoder.encode(userRequest.getPassword()));
             user = userRepository.save(user);
 
 
