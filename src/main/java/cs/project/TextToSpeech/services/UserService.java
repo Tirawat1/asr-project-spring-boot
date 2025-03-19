@@ -24,26 +24,26 @@ public class UserService {
 
 
 
-    public UserService(UserRepository userRepository ) {
-        this.userRepository = userRepository;
-    }
-    // login
+        public UserService(UserRepository userRepository ) {
+            this.userRepository = userRepository;
+        }
+        // login
 
-    public String login(String email, String password) {
-    Optional<UserModel> optionalUser = userRepository.findByEmail(email);
-    if (optionalUser.isEmpty()) {
-        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
-    }
+        public String login(String email, String password) {
+        Optional<UserModel> optionalUser = userRepository.findByEmail(email);
+        if (optionalUser.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
+        }
 
-    UserModel user = optionalUser.get();
-    PasswordEncoder encoder = new BCryptPasswordEncoder();
+        UserModel user = optionalUser.get();
+        PasswordEncoder encoder = new BCryptPasswordEncoder();
 
-    // Check if the provided password matches the stored hashed password
-    if (!encoder.matches(password, user.getPassword())) {
-        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid password");
+        // Check if the provided password matches the stored hashed password
+        if (!encoder.matches(password, user.getPassword())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid password");
+        }
+        return user.getId();
     }
-    return user.getId();
-}
 
     // Get all users
     public List<UserModel> getAllUsers() {
