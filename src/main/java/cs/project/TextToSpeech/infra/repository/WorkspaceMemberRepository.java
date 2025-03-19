@@ -5,6 +5,8 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
+
 import java.util.List;
 
 @Repository
@@ -15,4 +17,5 @@ public interface WorkspaceMemberRepository extends MongoRepository<WorkspaceMemb
     List<WorkspaceMemberModel> findByWorkspaceId(String workspaceId);
 
     void deleteByWorkspaceId(String workspaceId);
+    void deleteByCreatedAtBefore(LocalDateTime createdAt);
 }
