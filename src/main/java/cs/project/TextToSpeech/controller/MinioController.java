@@ -29,21 +29,21 @@ public class MinioController {
         return fileName;
     }
 
-    @GetMapping("/download/{filename}")
-    public ResponseEntity<?> downloadFile(@PathVariable String filename) throws Exception {
-        try {
-            InputStream fileInputStream = minioService.getAudioFile(filename);
+    // @GetMapping("/download/{filename}")
+    // public ResponseEntity<?> downloadFile(@PathVariable String filename) throws Exception {
+    //     try {
+    //         InputStream fileInputStream = minioService.getAudioFile(filename);
 
-            return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
-                    .body(new InputStreamResource(fileInputStream));
+    //         return ResponseEntity.ok()
+    //                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
+    //                 .body(new InputStreamResource(fileInputStream));
 
-        } catch (RuntimeException e) {
-            // If file retrieval fails, return an error response
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("File not found or error retrieving file: " + e.getMessage());
-        }
-    }   
+    //     } catch (RuntimeException e) {
+    //         // If file retrieval fails, return an error response
+    //         return ResponseEntity.status(HttpStatus.NOT_FOUND)
+    //                 .body("File not found or error retrieving file: " + e.getMessage());
+    //     }
+    // }   
 
     @GetMapping("/downloadByUrl/{filename}")
     public String getFileByUrl(@PathVariable String filename) {
