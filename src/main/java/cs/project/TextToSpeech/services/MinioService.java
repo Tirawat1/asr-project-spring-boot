@@ -1,10 +1,13 @@
 package cs.project.TextToSpeech.services;
 
+import io.minio.CopyObjectArgs;
+import io.minio.CopySource;
 import io.minio.GetObjectArgs;
 import io.minio.GetPresignedObjectUrlArgs;
 import io.minio.ListObjectsArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
+import io.minio.RemoveObjectArgs;
 import io.minio.Result;
 import io.minio.StatObjectArgs;
 import io.minio.http.Method;
@@ -113,24 +116,45 @@ public class MinioService {
         return newFileName;
     }
 
-    // Get an audio file from Minio
-    public InputStream getAudioFile(String fileName) throws Exception {
-        return minioClient.getObject(
-                GetObjectArgs.builder()
-                        .bucket(audioBucket)
-                        .object(fileName)
-                        .build()
-        );
+    public String renameFile(String oldFileName, String newFileName) throws Exception {
+    if (!fileExists(oldFileName)) {
+        throw new IllegalArgumentException("File does not exist: " + oldFileName);
     }
+    if (fileExists(newFileName)) {
+        throw new IllegalArgumentException("File already exists: " + newFileName);
+    }
+
+    try {
+        minioClient.copyObject(
+            CopyObjectArgs.builder()
+                .bucket(audioBucket)  
+                .object(newFileName)
+                .source(
+                    CopySource.builder()
+                    .bucket(audioBucket)
+                    .object(oldFileName)
+                    .build()
+                )
+                .build()
+        );
+
+        // Delete the old file
+        minioClient.removeObject(
+            RemoveObjectArgs.builder()
+                .bucket(audioBucket)  // Use audioBucket here instead of bucketName
+                .object(oldFileName)
+                .build()
+        );
+
+        return "File renamed successfully";
+    } catch (Exception e) {
+        throw new RuntimeException("Error renaming file in MinIO: " + e.getMessage(), e);
+    }
+}
+
 
     public String getAudioPresignedUrl(String fileName) throws Exception {
         try {
-            // String minioUrl = System.getenv("MINIO_URL");
-
-            // Log environment details for debugging
-        
-
-            // Generate presigned URL for the object
             String url = minioClient.getPresignedObjectUrl(
                     GetPresignedObjectUrlArgs.builder()
                             .method(Method.GET)
