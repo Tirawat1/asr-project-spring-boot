@@ -30,6 +30,16 @@ public class WorkspaceMemberController {
         return ResponseEntity.ok("Update Permission");
     }
 
+    @PatchMapping("/{id}/resend_invite")
+    public ResponseEntity<String> resendInvite(@PathVariable String id) {
+        try {
+            workspaceMemberService.resendInvitation(id);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+        return ResponseEntity.ok("Resend Invitation");
+    }
+
     @PatchMapping("/{pendingId}/accept")
     public ResponseEntity<String> acceptMember(@PathVariable String pendingId) {
         try {

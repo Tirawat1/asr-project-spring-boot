@@ -8,8 +8,10 @@ import cs.project.TextToSpeech.models.DTO.workspaceMember.UpdateWorkspaceMemberD
 import cs.project.TextToSpeech.models.DTO.workspaceMember.WorkspaceMemberWithUserDTO;
 import cs.project.TextToSpeech.models.UserModel;
 import cs.project.TextToSpeech.models.WorkspaceMemberModel;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 
@@ -23,6 +25,13 @@ public class WorkspaceMemberService {
         this.workspaceMemberRepository = workspaceMemberRepository;
         this.userService = userService;
         this.emailService = emailService;
+    }
+
+    @Scheduled(cron = "0 0 0 * * ?")
+    public void removeExpiredMembers() {
+        LocalDateTime sevenDaysAgo = LocalDateTime.now().minusDays(7);
+        workspaceMemberRepository.deleteByCreatedAtBefore(sevenDaysAgo);
+        System.out.println("Old workspace members removed successfully!");
     }
 
     public UserModel getUserByWorkspaceMemberId(String workspaceMemberId) {
@@ -84,8 +93,23 @@ public class WorkspaceMemberService {
             workspaceMemberRepository.save(workspaceMember);
 
             // send email
-            emailService.sendHtmlEmail(workspaceMember.getEmail());
+//            emailService.sendHtmlEmail(workspaceMember.getEmail());
             return workspaceMember;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void resendInvitation(String workspaceMemberId) {
+        try {
+            WorkspaceMemberModel workspaceMember = this.workspaceMemberRepository.findById(workspaceMemberId).orElse(null);
+            Objects.requireNonNull(workspaceMember, "Workspace member not found");
+
+            workspaceMember.setCreatedAt(LocalDateTime.now());
+            workspaceMemberRepository.save(workspaceMember);
+
+            // send email
+//            emailService.sendHtmlEmail(workspaceMember.getEmail());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

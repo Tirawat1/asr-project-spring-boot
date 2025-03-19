@@ -2,25 +2,19 @@ package cs.project.TextToSpeech.controller;
 
 import java.util.List;
 
-import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import cs.project.TextToSpeech.models.UserModel;
-import cs.project.TextToSpeech.models.Request.LoginRequest;
 import cs.project.TextToSpeech.models.Request.UserRequest;
 import cs.project.TextToSpeech.services.UserService;
-import org.springframework.web.bind.annotation.RequestParam;
-
-
 
 @RestController
 @RequestMapping("/users")
@@ -34,21 +28,9 @@ public class UserController {
         return ResponseEntity.ok(userService.getAllUsers());
     }
 
-    @PostMapping("/login")
-    public String login(@Valid @RequestBody LoginRequest loginRequest) {
-        
-        return userService.login(loginRequest.getEmail(), loginRequest.getPassword());
-    }
-    
-
     @GetMapping("/{id}")
     public ResponseEntity<UserModel> getUserById(@PathVariable String id) {
         return ResponseEntity.ok(userService.getUserById(id));
-    }
-
-    @PostMapping
-    public ResponseEntity<UserModel> createUser(@Valid @RequestBody UserRequest userRequest) {
-        return ResponseEntity.ok(userService.createUser(userRequest));
     }
 
     @DeleteMapping("/{id}")
