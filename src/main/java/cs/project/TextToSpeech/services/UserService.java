@@ -3,6 +3,7 @@ package cs.project.TextToSpeech.services;
 import java.util.*;
 
 import cs.project.TextToSpeech.infra.repository.*;
+import cs.project.TextToSpeech.models.DTO.auth.RegisterUserDTO;
 import cs.project.TextToSpeech.models.Request.DiaryFolderRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -91,24 +92,20 @@ public class UserService {
 //        return new UserWithFoldersAndDiaries(user, folders, diariesMap);
 //    }
 
-    public UserModel createUser(UserRequest userRequest) {
+    public UserModel createUser(RegisterUserDTO registerUserDTO) {
         try {
             // check exist
-            if (userRepository.findByEmail(userRequest.getEmail()).isPresent()) {
+            if (userRepository.findByEmail(registerUserDTO.getEmail()).isPresent()) {
                 throw new IllegalArgumentException("Email already exists");
-            }
-
-            if (userRepository.findByName(userRequest.getName()).isPresent()) {
-                throw new IllegalArgumentException("Name already exists");
             }
 
             // Create user
             UserModel user = new UserModel();
-            user.setName(userRequest.getName());
-            user.setEmail(userRequest.getEmail());
+            user.setName(registerUserDTO.getName());
+            user.setEmail(registerUserDTO.getEmail());
 
             PasswordEncoder encoder = new BCryptPasswordEncoder();
-            user.setPassword(encoder.encode(userRequest.getPassword()));
+            user.setPassword(encoder.encode(registerUserDTO.getPassword()));
             user = userRepository.save(user);
 
 
