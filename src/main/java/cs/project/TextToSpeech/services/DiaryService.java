@@ -8,13 +8,16 @@ import cs.project.TextToSpeech.models.DiaryModel;
 import cs.project.TextToSpeech.models.Request.DiaryRequest;
 
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
-import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestTemplate;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 
 @Service
@@ -22,9 +25,13 @@ public class DiaryService {
     @Autowired
     private final DiaryRepository repository;
 
+    @Autowired
+    private final MinioService minioService;
 
-    public DiaryService(DiaryRepository repository, RestTemplate restTemplate) {
+
+    public DiaryService(DiaryRepository repository, MinioService minioService) {
         this.repository = repository;
+        this.minioService = minioService;
     }
 
     public List<DiaryModel> getAllEntries() {
@@ -32,6 +39,19 @@ public class DiaryService {
             return repository.findAll();
         }catch (Exception e){
             throw new RuntimeException("Error getting all entries: " + e.getMessage());
+        }
+    }
+
+    public List<DiaryModel> getDiariesByUserId(String userId) {
+        try {
+            if (userId == null || userId.trim().isEmpty()) {
+                throw new IllegalArgumentException("User ID cannot be empty");
+            }
+            return repository.findAllDiariesByUserId(userId);
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Validation failed: " + e.getMessage());
+        } catch (Exception e) {
+            throw new RuntimeException("Error getting diaries by user ID: " + e.getMessage());
         }
     }
 
@@ -51,56 +71,6 @@ public class DiaryService {
         }
 
     }
-
-//     private List<Map<String, Object>> processContent(List<Map<String, Object>> content) {
-//     try {
-//         if (content == null || content.isEmpty()) {
-//             throw new IllegalArgumentException("Content cannot be null or empty");
-//         }
-
-//         for (Map<String, Object> item : content) {
-//             if (item.containsKey("insert") && item.get("insert") instanceof Map) {
-//                 Map<String, Object> insertMap = (Map<String, Object>) item.get("insert");
-//                 if (insertMap.containsKey("custom") && insertMap.get("custom") instanceof Map) {
-//                     Map<String, Object> customMap = (Map<String, Object>) insertMap.get("custom");
-//                     if (customMap.containsKey("audio")) {
-//                         String audioUrl = customMap.get("audio").toString();
-//                         if (audioUrl.trim().isEmpty()) {
-//                             throw new IllegalArgumentException("Audio URL cannot be empty");
-//                         }
-
-//                         String transcribedText = sendAudioToEnhanceService(audioUrl);
-//                         item.put("transcription", transcribedText);
-//                     }
-//                 }
-//             }
-//         }
-//         return content;
-//     } catch (IllegalArgumentException e) {
-//         throw new RuntimeException("Validation failed: " + e.getMessage());
-//     } catch (Exception e) {
-//         throw new RuntimeException("Error processing content: " + e.getMessage());
-//     }
-// }
-
-//     private String sendAudioToEnhanceService(String audioUrl) {
-//     try {
-//         if (audioUrl == null || audioUrl.trim().isEmpty()) {
-//             throw new IllegalArgumentException("Audio URL cannot be null or empty");
-//         }
-
-//         Map<String, String> requestBody = new HashMap<>();
-//         requestBody.put("audioUrl", audioUrl);
-
-//         return restTemplate.postForObject("http://192.168.1.38:5114/enhance_audio", requestBody, String.class);
-//     } catch (IllegalArgumentException e) {
-//         throw new RuntimeException("Validation failed: " + e.getMessage());
-//     } catch (RestClientException e) {
-//         throw new RuntimeException("Failed to communicate with the audio enhancement service: " + e.getMessage());
-//     } catch (Exception e) {
-//         throw new RuntimeException("Unexpected error during audio processing: " + e.getMessage());
-//     }
-// }
 
 
     public DiaryModel createEntry(DiaryRequest request) {
@@ -135,37 +105,102 @@ public class DiaryService {
         }
        
     }
+    private List<String> extractAudioFilenames(List<Map<String, Object>> content) {
+        List<String> audioFiles = new ArrayList<>();
+        ObjectMapper objectMapper = new ObjectMapper();
 
-    public DiaryModel updateEntry(@PathVariable String id, DiaryRequest request) {
-        try{
-            if (id == null || id.trim().isEmpty()) {
-                throw new IllegalArgumentException("ID cannot be empty");
+        for (Map<String, Object> entry : content) {
+            if (entry.containsKey("insert") && entry.get("insert") instanceof Map) {
+                Map<String, Object> insert = (Map<String, Object>) entry.get("insert");
+                if (insert.containsKey("custom") && insert.get("custom") instanceof String) {
+                    String customJson = (String) insert.get("custom");
+                    try {
+                        // Parse custom JSON
+                        Map<String, Object> customData = objectMapper.readValue(customJson, new TypeReference<Map<String, Object>>() {});
+
+                        if (customData.containsKey("audio") && customData.get("audio") instanceof String) {
+                            // Parse audio JSON
+                            Map<String, Object> audioData = objectMapper.readValue((String) customData.get("audio"), new TypeReference<Map<String, Object>>() {});
+                            Object audioUrlObject = audioData.get("audioUrl");
+
+                            if (audioUrlObject != null) {
+                                if (audioUrlObject instanceof String) {
+                                    // Single audio file
+                                    String audioUrl = (String) audioUrlObject;
+                                    if (audioUrl != null && !audioUrl.trim().isEmpty()) {
+                                        audioFiles.add(audioUrl);
+                                    }
+                                } else if (audioUrlObject instanceof List) {
+                                    // Multiple audio files (list)
+                                    List<String> audioUrls = (List<String>) audioUrlObject;
+                                    for (String audioUrl : audioUrls) {
+                                        if (audioUrl != null && !audioUrl.trim().isEmpty()) {
+                                            audioFiles.add(audioUrl);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
             }
-            if (request.getTitle() == null || request.getTitle().trim().isEmpty()) {
-                throw new IllegalArgumentException("Title cannot be empty");
-            }
-            if (request.getContent() == null || request.getContent().isEmpty()) {
-                throw new IllegalArgumentException("Content cannot be empty");
-            }
-            DiaryModel diary = repository.findById(id)
-                .orElseThrow(() -> new NoSuchElementException("Diary with id " + id + " not found"));
-                        diary.setTitle(request.getTitle());
-            diary.setContent(request.getContent());
-            System.out.println(request.getTitle());
-            if (request.getTagIds() == null) {
-                diary.setTagIds(new ArrayList<>());
-            } else {
-                diary.setTagIds(request.getTagIds());
-            }
-            return repository.save(diary);
         }
-        catch(IllegalArgumentException e){
-            throw new RuntimeException("Validation failed: " + e.getMessage());
+    return audioFiles;
+}
+
+
+
+public DiaryModel updateEntry(@PathVariable String id, @RequestBody DiaryRequest request) {
+    try {
+        if (id == null || id.trim().isEmpty()) {
+            throw new IllegalArgumentException("ID cannot be empty");
         }
-        catch(Exception e ){
-            throw new RuntimeException("Error updating entry: " + e.getMessage());
+        if (request.getTitle() == null || request.getTitle().trim().isEmpty()) {
+            throw new IllegalArgumentException("Title cannot be empty");
         }
+        if (request.getContent() == null || request.getContent().isEmpty()) {
+            throw new IllegalArgumentException("Content cannot be empty");
+        }
+
+        // Find existing diary entry
+        DiaryModel diary = repository.findById(id)
+            .orElseThrow(() -> new NoSuchElementException("Diary with id " + id + " not found"));
+
+        List<String> oldAudioFiles = extractAudioFilenames(diary.getContent());
+        List<String> newAudioFiles = extractAudioFilenames(request.getContent());
+
+        System.out.println("Old audio files: " + oldAudioFiles);
+        System.out.println("New audio files: " + newAudioFiles);
+        // Handle renaming of old and new audio files in minio
+        if (!oldAudioFiles.isEmpty() && !newAudioFiles.isEmpty()) {
+            for (int i = 0; i < Math.min(oldAudioFiles.size(), newAudioFiles.size()); i++) {
+                if (!oldAudioFiles.get(i).equals(newAudioFiles.get(i))) {
+                    minioService.renameFile(oldAudioFiles.get(i), newAudioFiles.get(i));
+                }
+            }
+        }
+
+        // Delete old audio files that are not in the new list
+        for (String oldAudioFile : oldAudioFiles) {
+            if (!newAudioFiles.contains(oldAudioFile)) {
+                minioService.deleteAudioFile(oldAudioFile);
+            }
+        }
+
+        // Update diary entry
+        diary.setTitle(request.getTitle());
+        diary.setContent(request.getContent());
+        diary.setTagIds(request.getTagIds() != null ? request.getTagIds() : new ArrayList<>());
+
+        return repository.save(diary);
+    } catch (IllegalArgumentException e) {
+        throw new RuntimeException("Validation failed: " + e.getMessage());
+    } catch (Exception e) {
+        throw new RuntimeException("Error updating entry: " + e.getMessage());
     }
+}
 
     public void deleteEntry(@PathVariable String id) {
         try {

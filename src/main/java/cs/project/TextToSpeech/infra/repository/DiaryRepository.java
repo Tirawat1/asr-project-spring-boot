@@ -9,4 +9,5 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 public interface DiaryRepository extends MongoRepository<DiaryModel, String> {
 
     List<DiaryModel> findAllByTagIdsContains(String tagId);
+    List<DiaryModel> findAllDiariesByUserId(String userId);
 }

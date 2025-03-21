@@ -6,7 +6,6 @@ import cs.project.TextToSpeech.models.DTO.auth.RegisterUserDTO;
 import cs.project.TextToSpeech.models.UserModel;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service

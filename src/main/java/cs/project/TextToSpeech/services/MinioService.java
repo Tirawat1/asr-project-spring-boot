@@ -117,40 +117,40 @@ public class MinioService {
     }
 
     public String renameFile(String oldFileName, String newFileName) throws Exception {
-    if (!fileExists(oldFileName)) {
-        throw new IllegalArgumentException("File does not exist: " + oldFileName);
-    }
-    if (fileExists(newFileName)) {
-        throw new IllegalArgumentException("File already exists: " + newFileName);
-    }
+        if (!fileExists(oldFileName)) {
+            throw new IllegalArgumentException("File does not exist: " + oldFileName);
+        }
+        if (fileExists(newFileName)) {
+            throw new IllegalArgumentException("File already exists: " + newFileName);
+        }
 
-    try {
-        minioClient.copyObject(
-            CopyObjectArgs.builder()
-                .bucket(audioBucket)  
-                .object(newFileName)
-                .source(
-                    CopySource.builder()
-                    .bucket(audioBucket)
+        try {
+            minioClient.copyObject(
+                CopyObjectArgs.builder()
+                    .bucket(audioBucket)  
+                    .object(newFileName)
+                    .source(
+                        CopySource.builder()
+                        .bucket(audioBucket)
+                        .object(oldFileName)
+                        .build()
+                    )
+                    .build()
+            );
+
+            // Delete the old file
+            minioClient.removeObject(
+                RemoveObjectArgs.builder()
+                    .bucket(audioBucket)  
                     .object(oldFileName)
                     .build()
-                )
-                .build()
-        );
+            );
 
-        // Delete the old file
-        minioClient.removeObject(
-            RemoveObjectArgs.builder()
-                .bucket(audioBucket)  // Use audioBucket here instead of bucketName
-                .object(oldFileName)
-                .build()
-        );
-
-        return "File renamed successfully";
-    } catch (Exception e) {
-        throw new RuntimeException("Error renaming file in MinIO: " + e.getMessage(), e);
+            return "File renamed successfully";
+        } catch (Exception e) {
+            throw new RuntimeException("Error renaming file in MinIO: " + e.getMessage(), e);
+        }
     }
-}
 
 
     public String getAudioPresignedUrl(String fileName) throws Exception {

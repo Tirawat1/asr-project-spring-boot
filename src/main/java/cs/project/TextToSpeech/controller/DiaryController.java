@@ -27,6 +27,11 @@ public class DiaryController {
         return diaryService.getEntryById(id);
     }
 
+    @GetMapping("/AllDiariesByUserId/{userId}")
+    public List<DiaryModel> getDiariesByUserId(@PathVariable String userId) {
+        return diaryService.getDiariesByUserId(userId);
+    }
+
     @PostMapping
     public ResponseEntity<DiaryModel> createEntry(@Valid @RequestBody DiaryRequest request) {
         DiaryModel savedDiary = diaryService.createEntry(request);

@@ -1,15 +1,11 @@
 package cs.project.TextToSpeech.controller;
 
-import cs.project.TextToSpeech.models.DTO.workspaceMember.CreateWorkspaceMemberDTO;
 import cs.project.TextToSpeech.models.DTO.workspaceMember.UpdateWorkspaceMemberDTO;
-import cs.project.TextToSpeech.models.WorkspaceMemberModel;
 import cs.project.TextToSpeech.services.WorkspaceMemberService;
-import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 
 @RestController
 @RequestMapping("/workspace_members")
