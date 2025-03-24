@@ -4,6 +4,8 @@ import java.util.*;
 
 import cs.project.TextToSpeech.infra.repository.*;
 import cs.project.TextToSpeech.models.DTO.auth.RegisterUserDTO;
+import cs.project.TextToSpeech.models.DTO.user.UpdateUserDTO;
+import cs.project.TextToSpeech.models.DTO.user.UserWithImageUrl;
 import cs.project.TextToSpeech.models.Request.DiaryFolderRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -12,7 +14,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import cs.project.TextToSpeech.models.UserModel;
-import cs.project.TextToSpeech.models.Request.UserRequest;
 
 import org.springframework.web.server.ResponseStatusException;
 
@@ -22,47 +23,32 @@ public class UserService {
     private final UserRepository userRepository;
     @Autowired
     private DiaryFolderService diaryFolderService;
+    @Autowired
+    private MinioService minioService;
 
 
-
-        public UserService(UserRepository userRepository ) {
-            this.userRepository = userRepository;
-        }
-        // login
-
-        // public String login(String email, String password) {
-        //     Optional<UserModel> optionalUser = userRepository.findByEmail(email);
-        //     if (optionalUser.isEmpty()) {
-        //         throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
-        //     }
-
-        //     UserModel user = optionalUser.get();
-        //     PasswordEncoder encoder = new BCryptPasswordEncoder();
-
-        //     // Check if the provided password matches the stored hashed password
-        //     if (!encoder.matches(password, user.getPassword())) {
-        //         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid password");
-        //     }
-        //     return user.getId();
-        // }
+    public UserService(UserRepository userRepository, MinioService minioService) {
+        this.userRepository = userRepository;
+        this.minioService = minioService;
+    }
 
     // Get all users
     public List<UserModel> getAllUsers() {
-        try{
+        try {
             return userRepository.findAll();
-        }catch (Exception e){
+        } catch (Exception e) {
             throw new RuntimeException("Error getting all users: " + e.getMessage());
         }
     }
 
     // Get a user by ID
     public UserModel getUserById(String id) {
-        try{
+        try {
             if (id == null || id.trim().isEmpty()) {
                 throw new IllegalArgumentException("ID cannot be empty");
             }
             return userRepository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User with ID: " + id));
-        }catch (IllegalArgumentException e){
+        } catch (IllegalArgumentException e) {
             throw new RuntimeException("Validation failed: " + e.getMessage());
         }
     }
@@ -76,21 +62,6 @@ public class UserService {
             throw new RuntimeException("Error getting user by email: " + e.getMessage());
         }
     }
-
-//    public UserWithFoldersAndDiaries getUserWithFoldersAndDiaries(String userId) {
-//        UserModel user = userRepository.findById(userId)
-//                .orElseThrow(() -> new RuntimeException("User not found"));
-//
-////        List<DiaryFolderModel> folders = diaryFolderRepository.findAllById(user.getDiaryFolderIds());
-//
-//        Map<String, List<DiaryModel>> diariesMap = new HashMap<>();
-//        for (DiaryFolderModel folder : folders) {
-//            List<DiaryModel> diaries = diaryRepository.findAllById(folder.getDiaryIds());
-//            diariesMap.put(folder.getDiaryFolderId(), diaries);
-//        }
-//
-//        return new UserWithFoldersAndDiaries(user, folders, diariesMap);
-//    }
 
     public UserModel createUser(RegisterUserDTO registerUserDTO) {
         try {
@@ -122,36 +93,34 @@ public class UserService {
         }
     }
 
-    public UserModel updateUser(String id, UserRequest userRequest) {
+    public UserWithImageUrl putUser(String id, UpdateUserDTO updateUserDTO) {
         try {
-            // Validate ID
-            if (id == null || id.trim().isEmpty()) {
-                throw new IllegalArgumentException("User ID cannot be empty");
-            }
-
-            // Find user
             UserModel user = userRepository.findById(id).orElse(null);
             if (user == null) {
-                throw new IllegalArgumentException("User not found with ID: " + id);
+                throw new IllegalArgumentException("User not found");
             }
 
-            // Update user
-            user.setName(userRequest.getName());
-            user.setEmail(userRequest.getEmail());
+            if (updateUserDTO.getName() != null && !updateUserDTO.getName().trim().isEmpty()) {
+                user.setName(updateUserDTO.getName());
+            }
 
-            user.setPassword(userRequest.getPassword());
+            System.out.println("test: " + updateUserDTO.getProfileImgPath());
+            if (updateUserDTO.getProfileImgPath() != null) {
+                String path = minioService.uploadImageFile(updateUserDTO.getProfileImgPath(), user.getId());
+                user.setProfileImgPath(path);
+            }
 
-            return userRepository.save(user);
-        } catch (IllegalArgumentException e) {
-            throw new RuntimeException("Validation failed: " + e.getMessage());
+            user = userRepository.save(user);
+
+            return getUserWithImageUrl(user.getId());
         } catch (Exception e) {
-            throw new RuntimeException("Error updating user: " + e.getMessage());
+            throw new RuntimeException(e.getMessage());
         }
     }
 
     // Delete a user by ID
     public void deleteUser(String id) {
-        try{
+        try {
             if (id == null || id.trim().isEmpty()) {
                 throw new IllegalArgumentException("ID cannot be empty");
             }
@@ -163,12 +132,38 @@ public class UserService {
 
             // Delete all diary folders and diaries of user
             diaryFolderService.deletePersonalFolder(id);
-            
+
 
             userRepository.deleteById(id);
 
-        }catch (IllegalArgumentException e){
+        } catch (IllegalArgumentException e) {
             throw new RuntimeException("Validation failed: " + e.getMessage());
+        }
+    }
+
+    public UserWithImageUrl getUserWithImageUrl(String id) {
+        try {
+            UserModel user = userRepository.findById(id).orElse(null);
+            if (user == null) {
+                throw new IllegalArgumentException("User not found with ID: " + id);
+            }
+
+            String imageUrl;
+            if (user.getProfileImgPath() != null) {
+                try {
+                    imageUrl = minioService.getUserProfilePresignedObjectUrl(user.getProfileImgPath());
+                } catch (Exception e) {
+                    throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile image not found: " + e.getMessage());
+                }
+            } else {
+                imageUrl = null;
+            }
+
+            System.out.println("imageUrl: " + imageUrl);
+
+            return new UserWithImageUrl(user, imageUrl);
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
         }
     }
 

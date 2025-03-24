@@ -2,19 +2,16 @@ package cs.project.TextToSpeech.controller;
 
 import java.util.List;
 
+import cs.project.TextToSpeech.models.DTO.user.UpdateUserDTO;
+import cs.project.TextToSpeech.models.DTO.user.UserWithImageUrl;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import cs.project.TextToSpeech.models.UserModel;
-import cs.project.TextToSpeech.models.Request.UserRequest;
 import cs.project.TextToSpeech.services.UserService;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/users")
@@ -40,7 +37,16 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<UserModel> updateUser(@PathVariable String id, @RequestBody UserRequest userRequest) {
-        return ResponseEntity.ok(userService.updateUser(id, userRequest));
+    public ResponseEntity<UserWithImageUrl> updateUser(
+            @PathVariable String id,
+            @Valid @RequestParam(value = "name", required = false) String name,
+            @Valid @RequestParam(value = "profileImgPath", required = false) MultipartFile profileImgPath
+    ) {
+        try {
+            UpdateUserDTO updateUserDTO = new UpdateUserDTO(name, profileImgPath);
+            return ResponseEntity.ok(userService.putUser(id, updateUserDTO));
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
     }
 }

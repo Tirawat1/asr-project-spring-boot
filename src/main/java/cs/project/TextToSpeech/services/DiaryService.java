@@ -150,8 +150,6 @@ public class DiaryService {
     return audioFiles;
 }
 
-
-
 public DiaryModel updateEntry(@PathVariable String id, @RequestBody DiaryRequest request) {
     try {
         if (id == null || id.trim().isEmpty()) {

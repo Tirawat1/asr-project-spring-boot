@@ -2,7 +2,9 @@ package cs.project.TextToSpeech.services;
 
 import cs.project.TextToSpeech.infra.enums.UserPermission;
 import cs.project.TextToSpeech.infra.enums.WorkspaceMemberStatus;
+import cs.project.TextToSpeech.infra.repository.UserRepository;
 import cs.project.TextToSpeech.infra.repository.WorkspaceMemberRepository;
+import cs.project.TextToSpeech.models.DTO.user.UserWithImageUrl;
 import cs.project.TextToSpeech.models.DTO.workspaceMember.CreateWorkspaceMemberDTO;
 import cs.project.TextToSpeech.models.DTO.workspaceMember.UpdateWorkspaceMemberDTO;
 import cs.project.TextToSpeech.models.DTO.workspaceMember.WorkspaceMemberWithUserDTO;
@@ -46,15 +48,17 @@ public class WorkspaceMemberService {
 
     public WorkspaceMemberWithUserDTO getWorkspaceMemberWithUserDTOByWorkspaceMemberId(String workspaceMemberId) {
         try {
-            UserModel user;
+            UserWithImageUrl userWithImageUrl;
             try {
-                user = getUserByWorkspaceMemberId(workspaceMemberId);
+                UserModel user = getUserByWorkspaceMemberId(workspaceMemberId);
+                userWithImageUrl = userService.getUserWithImageUrl(user.getId());
             } catch (Exception e) {
-                user = null;
+                userWithImageUrl = null;
             }
+
             WorkspaceMemberModel workspaceMember = this.workspaceMemberRepository.findById(workspaceMemberId).orElse(null);
 
-            return new WorkspaceMemberWithUserDTO(workspaceMember, user);
+            return new WorkspaceMemberWithUserDTO(workspaceMember, userWithImageUrl);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -93,7 +97,7 @@ public class WorkspaceMemberService {
             workspaceMemberRepository.save(workspaceMember);
 
             // send email
-//            emailService.sendHtmlEmail(workspaceMember.getEmail());
+            emailService.sendHtmlEmail(workspaceMember.getEmail());
             return workspaceMember;
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -109,7 +113,7 @@ public class WorkspaceMemberService {
             workspaceMemberRepository.save(workspaceMember);
 
             // send email
-//            emailService.sendHtmlEmail(workspaceMember.getEmail());
+            emailService.sendHtmlEmail(workspaceMember.getEmail());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

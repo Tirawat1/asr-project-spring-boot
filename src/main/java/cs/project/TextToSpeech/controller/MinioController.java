@@ -2,15 +2,9 @@ package cs.project.TextToSpeech.controller;
 
 import cs.project.TextToSpeech.services.MinioService;
 
-import org.springframework.core.io.InputStreamResource;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.google.common.net.HttpHeaders;
-
-import java.io.InputStream;
 import java.util.Map;
 
 
@@ -23,32 +17,24 @@ public class MinioController {
         this.minioService = minioService;
     }
 
-    @PostMapping("/upload")
-    public String uploadAudioFile(@RequestParam("audioFile") MultipartFile file) throws Exception {
-        String fileName = minioService.uploadAudioFile(file);
-        return fileName;
+    @GetMapping("/download-profile/{filename}")
+    public String downloadProfile(@PathVariable String filename) {
+        try {
+            return minioService.getUserProfilePresignedObjectUrl(filename);
+        } catch (Exception e) {
+            return "Error generating presigned URL: " + e.getMessage();
+        }
     }
 
-    // @GetMapping("/download/{filename}")
-    // public ResponseEntity<?> downloadFile(@PathVariable String filename) throws Exception {
-    //     try {
-    //         InputStream fileInputStream = minioService.getAudioFile(filename);
-
-    //         return ResponseEntity.ok()
-    //                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
-    //                 .body(new InputStreamResource(fileInputStream));
-
-    //     } catch (RuntimeException e) {
-    //         // If file retrieval fails, return an error response
-    //         return ResponseEntity.status(HttpStatus.NOT_FOUND)
-    //                 .body("File not found or error retrieving file: " + e.getMessage());
-    //     }
-    // }   
+    @PostMapping("/upload")
+    public String uploadAudioFile(@RequestParam("audioFile") MultipartFile file) throws Exception {
+        return minioService.uploadAudioFile(file);
+    }
 
     @GetMapping("/downloadByUrl/{filename}")
     public String getFileByUrl(@PathVariable String filename) {
         try {
-            String presignedUrl = minioService.getAudioPresignedUrl(filename);
+            String presignedUrl = minioService.getAudioPresignedObjectUrl(filename);
 
             return presignedUrl;
         } catch (Exception e) {
