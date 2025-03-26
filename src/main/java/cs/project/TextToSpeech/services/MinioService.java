@@ -96,23 +96,21 @@ public class MinioService {
         // Extract file extension if present
         String originalFileName = file.getOriginalFilename();
         int dotIndex = originalFileName.lastIndexOf(".");
+        String baseName = originalFileName;
         if (dotIndex != -1) {
             fileExtension = originalFileName.substring(dotIndex);
+            baseName = originalFileName.substring(0, dotIndex);
         }
 
-        // Use 'name' as the filename
-        String newFileName = name + fileExtension;
+        String newFileName = baseName + fileExtension;
+
+        int count = 1;
+        while (fileExists(bucket,newFileName)) {
+            newFileName = baseName + "_" + count + fileExtension;
+            count++;
+        }
 
         try (InputStream inputStream = file.getInputStream()) {
-            // If file exists, delete it before uploading the new one
-            if (fileExists(bucket, newFileName)) {
-                minioClient.removeObject(
-                        RemoveObjectArgs.builder()
-                                .bucket(bucket)
-                                .object(newFileName)
-                                .build()
-                );
-            }
 
             // Upload the new file
             minioClient.putObject(
