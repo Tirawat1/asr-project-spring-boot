@@ -93,7 +93,7 @@ public class WorkspaceMemberService {
             workspaceMemberRepository.save(workspaceMember);
 
             // send email
-//            emailService.sendHtmlEmail(workspaceMember.getEmail());
+            emailService.sendHtmlEmail(workspaceMember.getEmail());
             return workspaceMember;
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -109,7 +109,7 @@ public class WorkspaceMemberService {
             workspaceMemberRepository.save(workspaceMember);
 
             // send email
-//            emailService.sendHtmlEmail(workspaceMember.getEmail());
+            emailService.sendHtmlEmail(workspaceMember.getEmail());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
