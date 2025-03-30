@@ -2,7 +2,6 @@ package cs.project.TextToSpeech.services;
 
 import io.minio.CopyObjectArgs;
 import io.minio.CopySource;
-import io.minio.GetObjectArgs;
 import io.minio.GetPresignedObjectUrlArgs;
 import io.minio.ListObjectsArgs;
 import io.minio.MinioClient;
@@ -27,7 +26,7 @@ import java.util.concurrent.TimeUnit;
 public class MinioService {
     private final MinioClient minioClient;
     private final String audioBucket = "audio-bucket";
-
+    private final String imageBucket = "image-bucket";
 
     @Autowired
     private AsrService asrService;
@@ -44,11 +43,10 @@ public class MinioService {
     public MinioService(@Value("${minio.url}") String minioUrl,
                         @Value("${minio.accessKey}") String accessKey,
                         @Value("${minio.secretKey}") String secretKey) {
-        // Initializing MinioClient using injected values
         this.minioUrl = minioUrl;
         this.accessKey = accessKey;
         this.secretKey = secretKey;
-        
+
         this.minioClient = MinioClient.builder()
                 .endpoint(minioUrl)
                 .credentials(accessKey, secretKey)
@@ -67,46 +65,57 @@ public class MinioService {
     }
 
     // Check if the file exists in the bucket
-    private boolean fileExists(String fileName) {
+    private boolean fileExists(String bucket, String fileName) {
         try {
             minioClient.statObject(
                     StatObjectArgs.builder()
-                            .bucket(audioBucket)
+                            .bucket(bucket)
                             .object(fileName)
                             .build()
             );
-            return true; 
+            return true;
         } catch (Exception e) {
-            return false; 
+            return false;
         }
     }
 
     // Upload an audio file to Minio
     public String uploadAudioFile(MultipartFile file) throws Exception {
-        String originalFileName = file.getOriginalFilename();
-        String fileExtension = "";
-        String baseName = originalFileName;
+        String name = file.getOriginalFilename();
+        return uploadFile(audioBucket, file, name);
+    }
 
-        // Extract file extension
+    // Upload an image file to Minio
+    public String uploadImageFile(MultipartFile file, String name) throws Exception {
+        return uploadFile(imageBucket, file, name);
+    }
+
+    private String uploadFile(String bucket, MultipartFile file, String name) throws Exception {
+        String fileExtension = "";
+
+        // Extract file extension if present
+        String originalFileName = file.getOriginalFilename();
         int dotIndex = originalFileName.lastIndexOf(".");
+        String baseName = originalFileName;
         if (dotIndex != -1) {
             fileExtension = originalFileName.substring(dotIndex);
             baseName = originalFileName.substring(0, dotIndex);
         }
 
-        String newFileName = originalFileName;
-        int count = 1;
+        String newFileName = baseName + fileExtension;
 
-        // Check if the file exists, and increment the file name if it does
-        while (fileExists(newFileName)) {
+        int count = 1;
+        while (fileExists(bucket,newFileName)) {
             newFileName = baseName + "_" + count + fileExtension;
             count++;
         }
 
         try (InputStream inputStream = file.getInputStream()) {
+
+            // Upload the new file
             minioClient.putObject(
                     PutObjectArgs.builder()
-                            .bucket(audioBucket)
+                            .bucket(bucket)
                             .object(newFileName)
                             .stream(inputStream, file.getSize(), -1)
                             .contentType(file.getContentType())
@@ -116,34 +125,34 @@ public class MinioService {
         return newFileName;
     }
 
+
     public String renameFile(String oldFileName, String newFileName) throws Exception {
-        if (!fileExists(oldFileName)) {
+        if (!fileExists(audioBucket, oldFileName)) {
             throw new IllegalArgumentException("File does not exist: " + oldFileName);
         }
-        if (fileExists(newFileName)) {
+        if (fileExists(audioBucket, newFileName)) {
             throw new IllegalArgumentException("File already exists: " + newFileName);
         }
 
         try {
             minioClient.copyObject(
-                CopyObjectArgs.builder()
-                    .bucket(audioBucket)  
-                    .object(newFileName)
-                    .source(
-                        CopySource.builder()
-                        .bucket(audioBucket)
-                        .object(oldFileName)
-                        .build()
-                    )
-                    .build()
+                    CopyObjectArgs.builder()
+                            .bucket(audioBucket)
+                            .object(newFileName)
+                            .source(
+                                    CopySource.builder()
+                                            .bucket(audioBucket)
+                                            .object(oldFileName)
+                                            .build()
+                            )
+                            .build()
             );
 
-            // Delete the old file
             minioClient.removeObject(
-                RemoveObjectArgs.builder()
-                    .bucket(audioBucket)  
-                    .object(oldFileName)
-                    .build()
+                    RemoveObjectArgs.builder()
+                            .bucket(audioBucket)
+                            .object(oldFileName)
+                            .build()
             );
 
             return "File renamed successfully";
@@ -152,57 +161,54 @@ public class MinioService {
         }
     }
 
+    public String getUserProfilePresignedObjectUrl(String fileName) throws Exception {
+        return getPresignedObjectUrl(imageBucket, fileName, 7,TimeUnit.DAYS);
+    }
 
-    public String getAudioPresignedUrl(String fileName) throws Exception {
+    public String getAudioPresignedObjectUrl(String fileName) throws Exception {
+        return getPresignedObjectUrl(audioBucket, fileName, 1, TimeUnit.HOURS);
+    }
+
+    public String getPresignedObjectUrl(String bucket, String fileName, int duration, TimeUnit timeUnit) {
         try {
-            String url = minioClient.getPresignedObjectUrl(
+            return minioClient.getPresignedObjectUrl(
                     GetPresignedObjectUrlArgs.builder()
                             .method(Method.GET)
-                            .bucket(audioBucket)
+                            .bucket(bucket)
                             .object(fileName)
-                            .expiry(1, TimeUnit.HOURS)  
+                            .expiry(duration, timeUnit)
                             .build()
             );
-
-            System.out.println("Generated Presigned URL: " + url);
-            
-            return url;
         } catch (Exception e) {
-            System.err.println("Error generating presigned URL: " + e.getMessage());
             throw new RuntimeException("Error generating presigned URL: " + e.getMessage(), e);
         }
     }
 
     public String processTranscribe(String fileName) throws Exception {
-        try
-        {
-            String url = minioClient.getPresignedObjectUrl(
-                    GetPresignedObjectUrlArgs.builder()
-                            .method(Method.GET)
-                            .bucket(audioBucket)
-                            .object(fileName)
-                            .expiry(1, TimeUnit.HOURS)  
-                            .build()
-            );
-            // Send the audio file to the ASR service
-            String transcribe = asrService.sendAudioToEnhanceService(url);
-
-            return transcribe;
+        try {
+            String url = getAudioPresignedObjectUrl(fileName);
+            return asrService.sendAudioToEnhanceService(url);
         } catch (Exception e) {
             throw new RuntimeException("Error generating Transcript URL: " + e.getMessage(), e);
         }
     }
 
-    // Delete an audio file from Minio
     public void deleteAudioFile(String fileName) throws Exception {
+        deleteFile(audioBucket, fileName);
+    }
+
+    public void deleteImageFile(String fileName) throws Exception {
+        deleteFile(imageBucket, fileName);
+    }
+
+    private void deleteFile(String bucket, String fileName) throws Exception {
         try {
             minioClient.removeObject(
-                    io.minio.RemoveObjectArgs.builder()
-                            .bucket(audioBucket)
+                    RemoveObjectArgs.builder()
+                            .bucket(bucket)
                             .object(fileName)
                             .build()
             );
-            System.out.println("Deleted file: " + fileName);
         } catch (Exception e) {
             throw new RuntimeException("Failed to delete file: " + e.getMessage(), e);
         }

@@ -3,9 +3,12 @@ package cs.project.TextToSpeech.controller;
 import cs.project.TextToSpeech.models.DTO.auth.LoginResponseDTO;
 import cs.project.TextToSpeech.models.DTO.auth.LoginUserDTO;
 import cs.project.TextToSpeech.models.DTO.auth.RegisterUserDTO;
+import cs.project.TextToSpeech.models.DTO.user.UserWithImageUrl;
 import cs.project.TextToSpeech.models.UserModel;
 import cs.project.TextToSpeech.services.AuthenticationService;
 import cs.project.TextToSpeech.services.JwtService;
+import cs.project.TextToSpeech.services.MinioService;
+import cs.project.TextToSpeech.services.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -17,10 +20,12 @@ public class AuthenticationController {
     private final JwtService jwtService;
 
     private final AuthenticationService authenticationService;
+    private final UserService userService;
 
-    public AuthenticationController(JwtService jwtService, AuthenticationService authenticationService) {
+    public AuthenticationController(JwtService jwtService, AuthenticationService authenticationService, UserService userService) {
         this.jwtService = jwtService;
         this.authenticationService = authenticationService;
+        this.userService = userService;
     }
 
     @PostMapping("/signup")
@@ -43,11 +48,13 @@ public class AuthenticationController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<UserModel> authenticatedUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        UserModel currentUser = (UserModel) authentication.getPrincipal();
-
-        return ResponseEntity.ok(currentUser);
+    public ResponseEntity<?> authenticatedUser() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            UserModel currentUser = (UserModel) authentication.getPrincipal();
+            return ResponseEntity.ok(userService.getUserWithImageUrl(currentUser.getId()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(e.getMessage());
+        }
     }
 }

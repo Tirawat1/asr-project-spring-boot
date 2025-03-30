@@ -1,6 +1,7 @@
 package cs.project.TextToSpeech.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import cs.project.TextToSpeech.services.MinioService;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -21,6 +22,7 @@ public class UserModel implements UserDetails {
     private String name;
     private String email;
     private String password;
+    private String profileImgPath;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
